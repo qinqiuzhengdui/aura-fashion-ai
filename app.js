@@ -108,6 +108,21 @@ function initLoginSystem() {
   const loginForm = document.getElementById('loginForm');
   const logoutBtn = document.getElementById('logoutBtn');
   const userRoleText = document.getElementById('userRoleText');
+  const loginMinMaxBtn = document.getElementById('loginMinMaxBtn');
+  const loginMaximizeBtn = document.getElementById('loginMaximizeBtn');
+  const loginCard = document.getElementById('loginCard');
+
+  if (loginMinMaxBtn && loginCard && loginMaximizeBtn) {
+    loginMinMaxBtn.addEventListener('click', () => {
+      loginCard.style.display = 'none';
+      loginMaximizeBtn.style.display = 'flex';
+    });
+    
+    loginMaximizeBtn.addEventListener('click', () => {
+      loginCard.style.display = 'block';
+      loginMaximizeBtn.style.display = 'none';
+    });
+  }
 
   if (loginForm) {
     loginForm.addEventListener('submit', (e) => {
@@ -293,56 +308,78 @@ function renderStep2Gallery(userPromptText) {
   if (instructionBanner) {
     instructionBanner.innerHTML = `
       <div style="font-size: 13px; color: #9ca3af; margin-bottom: 8px;">
-        • 已根据您最新输入的提示词 <strong style="color: #00c292; font-weight: 500;">"${escapeHtml(promptText)}"</strong> 联网搜索抓取各大潮流网站最新服装大图<br>
-        • 大模型视觉智能体 (VLM Agent) 已完成二阶段匹配度打分与精细过滤
+        • 正在为您连接自动化采集管道，从 VOGUE, 品牌官网, 优质图库搜索大图...<br>
+        • 并行启动 5 大爬虫引擎，AI 预筛高质量结果，请稍候。
       </div>
-      请从以下筛选出的参考图片中选择您认为最匹配的服装大图，并确认进入下一步。
     `;
   }
 
-  // 2. 根据最新输入的提示词 Hash Seed 动态重新排序/拉取图库，给用户真实的实时响应视觉变化！
   const grid = document.getElementById('runwayGalleryGrid');
   if (!grid) return;
 
-  const promptSeed = promptText.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const shuffledImages = [...RUNWAY_IMAGES].sort((a, b) => {
-    return ((a.id * promptSeed) % 15) - ((b.id * promptSeed) % 15);
+  grid.innerHTML = '<div style="color:white; padding: 20px; font-size: 14px;">🌐 正在并行调度爬虫抓取并调用 AI 语义预筛，请稍等片刻...</div>';
+
+  fetch('/api/source_images', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: promptText })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (instructionBanner) {
+      instructionBanner.innerHTML = `
+        <div style="font-size: 13px; color: #9ca3af; margin-bottom: 8px;">
+          • 已成功抓取并经过 AI 智能预筛 (剔除低质量/不相关图片)。<br>
+          • 搜索词：<strong style="color: #00c292; font-weight: 500;">"${promptText}"</strong>
+        </div>
+        请从以下筛选出的参考图片中选择您认为最匹配的服装大图，并确认进入下一步。
+      `;
+    }
+
+    if (data.success && data.data && data.data.length > 0) {
+      grid.innerHTML = data.data.map(img => `
+        <div class="fashion-card ${state.selectedImages.includes(img.id) ? 'selected' : ''}" data-id="${img.id}">
+          <img src="${img.src}" alt="${img.title}" loading="lazy">
+          <div class="card-select-checkbox">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div class="card-hover-actions">
+            <button class="card-action-btn zoom-btn" title="查看大图" data-src="${img.src}" data-caption="${img.title}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                <line x1="11" y1="8" x2="11" y2="14"></line>
+                <line x1="8" y1="11" x2="14" y2="11"></line>
+              </svg>
+            </button>
+            <button class="card-action-btn" title="收藏至灵感库">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      `).join('');
+      bindCardInteractions(document.getElementById('panelStep2'));
+    } else {
+       grid.innerHTML = '<div style="color:#ff6b6b; padding: 20px;">抱歉，未能获取到高质量图片，请尝试更换关键词。</div>';
+    }
+  })
+  .catch(err => {
+     console.error(err);
+     grid.innerHTML = '<div style="color:#ff6b6b; padding: 20px;">网络请求失败，请确保后端服务 (FastAPI) 已启动。</div>';
+     if (instructionBanner) {
+        instructionBanner.innerHTML = '请求后端失败。';
+     }
   });
-
-  grid.innerHTML = shuffledImages.map(img => `
-    <div class="fashion-card ${state.selectedImages.includes(img.id) ? 'selected' : ''}" data-id="${img.id}">
-      <img src="${img.src}" alt="${img.title}" loading="lazy">
-      <div class="card-select-checkbox">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-      </div>
-      <div class="card-hover-actions">
-        <button class="card-action-btn zoom-btn" title="查看大图" data-src="${img.src}" data-caption="${img.title}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            <line x1="11" y1="8" x2="11" y2="14"></line>
-            <line x1="8" y1="11" x2="14" y2="11"></line>
-          </svg>
-        </button>
-        <button class="card-action-btn" title="收藏至灵感库">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-          </svg>
-        </button>
-      </div>
-    </div>
-  `).join('');
-
-  bindCardInteractions(document.getElementById('panelStep2'));
 
   // 绑定换一批
   const refreshBtn = document.getElementById('refreshGalleryBtn');
   if (refreshBtn) {
     refreshBtn.onclick = () => {
-      showNotification('🌐 正在通过 API & 动态爬虫重新抓取下一批秀场大图...');
-      RUNWAY_IMAGES.sort(() => Math.random() - 0.5);
+      showNotification('🌐 正在通过 API & 动态爬虫重新抓取下一批大图...');
       renderStep2Gallery(promptText);
     };
   }
@@ -352,7 +389,7 @@ function renderStep2Gallery(userPromptText) {
   if (confirmBtn) {
     confirmBtn.onclick = () => {
       if (state.selectedImages.length === 0) {
-        alert('请至少勾选 1 张代表性的秀场参考图！');
+        alert('请至少勾选 1 张代表性的参考图！');
         return;
       }
 
@@ -400,113 +437,154 @@ function renderStep3Generation() {
   const moodRow = document.getElementById('moodboardGenRow');
   const palRow = document.getElementById('paletteGenRow');
   const silRow = document.getElementById('silhouettesGenRow');
+  const promptText = document.getElementById('sentenceBuilder') ? document.getElementById('sentenceBuilder').innerText.trim() : state.projectData.theme;
 
-  if (moodRow) {
-    moodRow.innerHTML = GENERATED_ASSETS.moodboard.map(item => `
-      <div class="gen-image-item">
-        <img src="${item.src}" alt="${item.title}">
-        <div class="gen-image-caption">${item.title}</div>
-      </div>
-    `).join('');
-  }
+  const loadingHtml = '<div style="color:white; padding: 20px; font-size: 14px;">🪄 正在调用 DALL-E 3 生成多维度企划资产，请稍候...</div>';
+  if (moodRow) moodRow.innerHTML = loadingHtml;
+  if (palRow) palRow.innerHTML = loadingHtml;
+  if (silRow) silRow.innerHTML = loadingHtml;
 
-  if (palRow) {
-    palRow.innerHTML = GENERATED_ASSETS.palette.map(item => `
-      <div class="gen-image-item">
-        <img src="${item.src}" alt="${item.title}">
-        <div class="gen-image-caption">${item.title}</div>
-      </div>
-    `).join('');
-  }
-
-  if (silRow) {
-    silRow.innerHTML = GENERATED_ASSETS.silhouettes.map(item => `
-      <div class="gen-image-item">
-        <img src="${item.src}" alt="${item.title}">
-        <div class="gen-image-caption">${item.title}</div>
-      </div>
-    `).join('');
-  }
+  fetch('/api/generate_images', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: promptText, selectedImages: [] })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success && data.data) {
+      const assets = data.data;
+      if (moodRow && assets.moodboard) {
+        moodRow.innerHTML = assets.moodboard.map(item => `
+          <div class="gen-image-item">
+            <img src="${item.src}" alt="${item.title}">
+            <div class="gen-image-caption">${item.title}</div>
+          </div>
+        `).join('');
+      }
+      if (palRow && assets.palette) {
+        palRow.innerHTML = assets.palette.map(item => `
+          <div class="gen-image-item">
+            <img src="${item.src}" alt="${item.title}">
+            <div class="gen-image-caption">${item.title}</div>
+          </div>
+        `).join('');
+      }
+      if (silRow && assets.silhouettes) {
+        silRow.innerHTML = assets.silhouettes.map(item => `
+          <div class="gen-image-item">
+            <img src="${item.src}" alt="${item.title}">
+            <div class="gen-image-caption">${item.title}</div>
+          </div>
+        `).join('');
+      }
+      // Update global for PPT generation
+      window.GENERATED_ASSETS = assets;
+    }
+  })
+  .catch(err => {
+     console.error(err);
+     if (moodRow) moodRow.innerHTML = '<div style="color:#ff6b6b; padding: 20px;">图片生成失败，请检查服务。</div>';
+  });
 }
 
 // 渲染 Step 4: 企划文案与潘通特征解析
 function renderStep4Analysis() {
   const content = document.getElementById('featureAnalysisContent');
   if (!content) return;
+  const promptText = document.getElementById('sentenceBuilder') ? document.getElementById('sentenceBuilder').innerText.trim() : state.projectData.theme;
 
-  content.innerHTML = `
-    <!-- 1. 颜色特征 -->
-    <div class="feature-group">
-      <div class="group-title">颜色特征 (Color Characteristics & Pantone Alignment)</div>
+  content.innerHTML = '<div style="color:white; padding: 20px; font-size: 14px;">🧠 正在调用 GPT-4o 视觉模型分析企划意图与图片特征，请稍候...</div>';
+
+  fetch('/api/analyze_features', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: promptText, selectedImages: [] })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success && data.data) {
+      const SPEC_DATA = data.data;
+      window.SPEC_DATA = SPEC_DATA; // Save for PPT
       
-      <div style="margin-bottom: 12px;">
-        <strong style="color: #38bdf8;">• 主题色:</strong> 
-        <span style="color: #fff; font-weight: 600;">${SPEC_DATA.colors.primary.name}</span>
-        <span class="badge-tag-secondary" style="margin-left: 8px; font-size: 11px;">Pantone ${SPEC_DATA.colors.primary.code}</span>
-        <p class="analysis-rich-text" style="margin-left: 12px;">
-          <strong>流行色分析：</strong>${SPEC_DATA.colors.primary.analysis}
-        </p>
-      </div>
+      content.innerHTML = `
+        <!-- 1. 颜色特征 -->
+        <div class="feature-group">
+          <div class="group-title">颜色特征 (Color Characteristics & Pantone Alignment)</div>
+          
+          <div style="margin-bottom: 12px;">
+            <strong style="color: #38bdf8;">• 主题色:</strong> 
+            <span style="color: #fff; font-weight: 600;">${SPEC_DATA.colors.primary.name}</span>
+            <span class="badge-tag-secondary" style="margin-left: 8px; font-size: 11px;">Pantone ${SPEC_DATA.colors.primary.code}</span>
+            <p class="analysis-rich-text" style="margin-left: 12px;">
+              <strong>流行色分析：</strong>${SPEC_DATA.colors.primary.analysis}
+            </p>
+          </div>
 
-      <!-- 潘通色卡展示网格 -->
-      <div class="palette-swatches-grid">
-        <div class="pantone-card" title="点击复制 HEX 值" onclick="navigator.clipboard.writeText('${SPEC_DATA.colors.primary.hex}'); alert('已复制潘通标准色彩 HEX: ${SPEC_DATA.colors.primary.hex}')">
-          <div class="pantone-color-block" style="background-color: ${SPEC_DATA.colors.primary.hex};"></div>
-          <div class="pantone-details">
-            <div class="pantone-code">PANTONE ${SPEC_DATA.colors.primary.code}</div>
-            <div class="pantone-name">${SPEC_DATA.colors.primary.name.split(' ')[0]}</div>
-            <div class="pantone-role">${SPEC_DATA.colors.primary.role}</div>
+          <!-- 潘通色卡展示网格 -->
+          <div class="palette-swatches-grid">
+            <div class="pantone-card" title="点击复制 HEX 值" onclick="navigator.clipboard.writeText('${SPEC_DATA.colors.primary.hex}'); alert('已复制潘通标准色彩 HEX: ${SPEC_DATA.colors.primary.hex}')">
+              <div class="pantone-color-block" style="background-color: ${SPEC_DATA.colors.primary.hex};"></div>
+              <div class="pantone-details">
+                <div class="pantone-code">PANTONE ${SPEC_DATA.colors.primary.code}</div>
+                <div class="pantone-name">${SPEC_DATA.colors.primary.name.split(' ')[0]}</div>
+                <div class="pantone-role">${SPEC_DATA.colors.primary.role}</div>
+              </div>
+            </div>
+
+            ${SPEC_DATA.colors.secondary.map(c => `
+              <div class="pantone-card" title="点击复制 HEX 值" onclick="navigator.clipboard.writeText('${c.hex}'); alert('已复制潘通色彩 HEX: ${c.hex}')">
+                <div class="pantone-color-block" style="background-color: ${c.hex};"></div>
+                <div class="pantone-details">
+                  <div class="pantone-code">PANTONE ${c.code}</div>
+                  <div class="pantone-name">${c.name.split(' ')[0]}</div>
+                  <div class="pantone-role">${c.role}</div>
+                </div>
+              </div>
+            `).join('')}
+
+            ${SPEC_DATA.colors.base.map(c => `
+              <div class="pantone-card" title="点击复制 HEX 值" onclick="navigator.clipboard.writeText('${c.hex}'); alert('已复制潘通色彩 HEX: ${c.hex}')">
+                <div class="pantone-color-block" style="background-color: ${c.hex}; border-bottom: 1px solid #333;"></div>
+                <div class="pantone-details">
+                  <div class="pantone-code">PANTONE ${c.code}</div>
+                  <div class="pantone-name">${c.name.split(' ')[0]}</div>
+                  <div class="pantone-role">${c.role}</div>
+                </div>
+              </div>
+            `).join('')}
           </div>
         </div>
 
-        ${SPEC_DATA.colors.secondary.map(c => `
-          <div class="pantone-card" title="点击复制 HEX 值" onclick="navigator.clipboard.writeText('${c.hex}'); alert('已复制潘通色彩 HEX: ${c.hex}')">
-            <div class="pantone-color-block" style="background-color: ${c.hex};"></div>
-            <div class="pantone-details">
-              <div class="pantone-code">PANTONE ${c.code}</div>
-              <div class="pantone-name">${c.name.split(' ')[0]}</div>
-              <div class="pantone-role">${c.role}</div>
-            </div>
+        <!-- 2. 面料特征 -->
+        <div class="feature-group" style="margin-top: 24px;">
+          <div class="group-title">面料特征 (Fabric & Material Specifications)</div>
+          <div class="analysis-rich-text">
+            ${SPEC_DATA.fabrics.map(f => `
+              <div style="margin-bottom: 10px;">
+                <strong style="color: #34d399;">• ${f.name}：</strong>${f.desc}
+              </div>
+            `).join('')}
           </div>
-        `).join('')}
+        </div>
 
-        ${SPEC_DATA.colors.base.map(c => `
-          <div class="pantone-card" title="点击复制 HEX 值" onclick="navigator.clipboard.writeText('${c.hex}'); alert('已复制潘通色彩 HEX: ${c.hex}')">
-            <div class="pantone-color-block" style="background-color: ${c.hex}; border-bottom: 1px solid #333;"></div>
-            <div class="pantone-details">
-              <div class="pantone-code">PANTONE ${c.code}</div>
-              <div class="pantone-name">${c.name.split(' ')[0]}</div>
-              <div class="pantone-role">${c.role}</div>
-            </div>
+        <!-- 3. 服装设计特征 -->
+        <div class="feature-group" style="margin-top: 24px;">
+          <div class="group-title">服装设计与剪裁特征 (Design Silhouette & Details)</div>
+          <div class="analysis-rich-text">
+            ${SPEC_DATA.designCraft.map(d => `
+              <div style="margin-bottom: 10px;">
+                <strong style="color: #60a5fa;">• ${d.title}：</strong>${d.desc}
+              </div>
+            `).join('')}
           </div>
-        `).join('')}
-      </div>
-    </div>
-
-    <!-- 2. 面料特征 -->
-    <div class="feature-group" style="margin-top: 24px;">
-      <div class="group-title">面料特征 (Fabric & Material Specifications)</div>
-      <div class="analysis-rich-text">
-        ${SPEC_DATA.fabrics.map(f => `
-          <div style="margin-bottom: 10px;">
-            <strong style="color: #34d399;">• ${f.name}：</strong>${f.desc}
-          </div>
-        `).join('')}
-      </div>
-    </div>
-
-    <!-- 3. 服装设计特征 -->
-    <div class="feature-group" style="margin-top: 24px;">
-      <div class="group-title">服装设计与剪裁特征 (Design Silhouette & Details)</div>
-      <div class="analysis-rich-text">
-        ${SPEC_DATA.designCraft.map(d => `
-          <div style="margin-bottom: 10px;">
-            <strong style="color: #60a5fa;">• ${d.title}：</strong>${d.desc}
-          </div>
-        `).join('')}
-      </div>
-    </div>
-  `;
+        </div>
+      `;
+    }
+  })
+  .catch(err => {
+     console.error(err);
+     content.innerHTML = '<div style="color:#ff6b6b; padding: 20px;">AI 分析失败，请检查服务。</div>';
+  });
 }
 
 // 绑定步骤页面中的“前进/继续”按钮
@@ -729,7 +807,16 @@ function initApiConfigModal() {
   });
 
   document.getElementById('saveConfigBtn').onclick = () => {
+    const selectedMode = document.querySelector('input[name="modeRadio"]:checked').value;
+    state.config.mode = selectedMode;
+    if (selectedMode === 'deepseek') {
+      state.config.apiKey = 'sk-fcc7da63eea14850929dd778271fe50e';
+      state.config.apiBaseUrl = 'https://api.deepseek.com/v1';
+    } else if (selectedMode === 'live') {
+      state.config.apiKey = document.getElementById('apiKeyInput').value;
+      state.config.apiBaseUrl = document.getElementById('apiBaseUrlInput').value || 'https://api.openai.com/v1';
+    }
     modal.style.display = 'none';
-    showNotification('配置已成功保存！');
+    showNotification(`配置已成功保存！(当前模式: ${selectedMode})`);
   };
 }

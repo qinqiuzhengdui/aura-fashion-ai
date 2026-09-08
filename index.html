@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- PptxGenJS for client-side PPTX generation -->
   <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <!-- Fullscreen High-Fashion Video Login Overlay -->
@@ -21,7 +21,18 @@
     <div class="login-video-backdrop"></div>
 
     <!-- Glassmorphism Login Card -->
-    <div class="login-card">
+    <button id="loginMaximizeBtn" class="login-maximize-btn" title="展开智能平台" style="display: none;">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    </button>
+    <div class="login-card" id="loginCard">
+      <button id="loginMinMaxBtn" class="login-minmax-btn" title="最小化平台">
+        <svg id="minMaxIcon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+      </button>
       <div class="login-brand">
         <div class="login-logo-badge">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -396,6 +407,10 @@
               <span>高质量离线推演模式 (内置高保真时尚库，即开即用)</span>
             </label>
             <label class="radio-label">
+              <input type="radio" name="modeRadio" value="deepseek">
+              <span>默认AI ： deepseek</span>
+            </label>
+            <label class="radio-label">
               <input type="radio" name="modeRadio" value="live">
               <span>自定义 API Key 直连模式 (调用真实大模型)</span>
             </label>
@@ -462,6 +477,6 @@
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2"></script>
 </body>
 </html>
