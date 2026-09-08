@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURA Fashion AI - 时尚灵感企划设计平台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- PptxGenJS for client-side PPTX generation -->
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Fullscreen High-Fashion Video Login Overlay -->
+  <div class="login-overlay" id="loginOverlay">
+    <!-- Cinematic Background Video -->
+    <video class="login-bg-video" autoplay loop muted playsinline>
+      <source src="assets/bg_fashion_login.mp4" type="video/mp4">
+    </video>
+    <div class="login-video-backdrop"></div>
+
+    <!-- Glassmorphism Login Card -->
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="login-logo-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <span>AURA STUDIO</span>
+        </div>
+        <h1 class="login-title">时尚灵感企划智能平台</h1>
+        <p class="login-subtitle">AI-POWERED FASHION INSPIRATION & CONCEPT STUDIO</p>
+      </div>
+
+      <form class="login-form" id="loginForm" onsubmit="return false;">
+        <div class="form-group">
+          <label class="form-label">设计师账号 / 邮箱</label>
+          <input type="text" id="loginAccount" class="form-input" value="designer@aura-fashion.ai" placeholder="请输入设计师邮箱/账号" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <input type="password" id="loginPassword" class="form-input" value="12345678" placeholder="请输入密码" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">研发身份角色</label>
+          <select id="loginRole" class="form-input">
+            <option value="director">品牌创意总监 / Creative Director</option>
+            <option value="designer" selected>服装设计师 / Apparel Designer</option>
+            <option value="buyer">商品企划买手 / Merchandiser Buyer</option>
+          </select>
+        </div>
+
+        <div class="login-meta">
+          <label class="checkbox-label">
+            <input type="checkbox" checked> <span>记住登录状态</span>
+          </label>
+          <a href="#" class="forgot-link" onclick="alert('测试环境：请输入任意账号密码即可登录'); return false;">忘记密码？</a>
+        </div>
+
+        <button type="submit" id="loginSubmitBtn" class="login-btn">
+          <span>进入 AURA 企划工作站</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <span>演示账号已预置，点击按钮即可直接登录</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <!-- Top Navigation -->
+    <header class="top-nav">
+      <div class="nav-left">
+        <div class="logo-badge">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          <span class="logo-text">AURA STUDIO</span>
+        </div>
+        <span class="nav-divider"></span>
+        <span class="platform-title">时尚灵感企划智能体</span>
+      </div>
+
+      <div class="nav-center">
+        <div class="model-selector-wrapper">
+          <label for="modelSelect" class="model-label">
+            <span class="status-dot"></span>模型核心:
+          </label>
+          <select id="modelSelect" class="model-select">
+            <option value="gpt-4o">GPT-4o (Vision & Fashion Reasoning)</option>
+            <option value="claude-3-5">Claude 3.5 Sonnet (Creative Aesthetic)</option>
+            <option value="deepseek-v3">DeepSeek-V3 (Fashion Structure)</option>
+            <option value="qwen-vl">Qwen2.5-VL-72B (Multimodal Runway)</option>
+            <option value="gemini-1-5">Gemini 1.5 Pro (Multimodal 2M Context)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <div class="user-profile-badge" id="userProfileBadge">
+          <span class="user-avatar-dot"></span>
+          <span class="user-role-name" id="userRoleText">服装设计师</span>
+        </div>
+        <button id="logoutBtn" class="btn btn-outline btn-sm" title="退出登录返回视频登录页面">退出登录</button>
+        <button id="apiConfigBtn" class="btn btn-secondary btn-sm" title="配置 API Key 或模型端点">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>API 接口设置</span>
+        </button>
+        <button id="resetDemoBtn" class="btn btn-outline btn-sm">重置企划</button>
+      </div>
+    </header>
+
+    <!-- App Body: Left Sidebar + Main Content -->
+    <div class="app-body">
+      <!-- Left Sidebar -->
+      <aside class="left-sidebar">
+        <div class="sidebar-section-title">企划研发全流程</div>
+        <nav class="sidebar-nav">
+          <button class="sidebar-nav-item active" id="navStep1" data-step="1">
+            <span class="nav-step-badge">1</span>
+            <span class="nav-icon">📑</span>
+            <span class="nav-text">企划设计</span>
+          </button>
+          <button class="sidebar-nav-item disabled" id="navStep2" data-step="2">
+            <span class="nav-step-badge">2</span>
+            <span class="nav-icon">🖼️</span>
+            <span class="nav-text">图片筛选</span>
+          </button>
+          <button class="sidebar-nav-item disabled" id="navStep3" data-step="3">
+            <span class="nav-step-badge">3</span>
+            <span class="nav-icon">🎨</span>
+            <span class="nav-text">关键图片生成</span>
+          </button>
+          <button class="sidebar-nav-item disabled" id="navStep4" data-step="4">
+            <span class="nav-step-badge">4</span>
+            <span class="nav-icon">📝</span>
+            <span class="nav-text">企划文案生成</span>
+          </button>
+          <button class="sidebar-nav-item disabled" id="navStep5" data-step="5">
+            <span class="nav-step-badge">5</span>
+            <span class="nav-icon">📊</span>
+            <span class="nav-text">生成ppt</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-status-box">
+          <div class="status-pulse-dot"></div>
+          <div class="status-box-text">
+            <strong id="statusBoxTitle">步骤 1/5: 企划构思</strong>
+            <span id="statusBoxSub">请编辑并提交设计提示词</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Workspace Wrapper -->
+      <div class="main-content-wrapper">
+        <main class="main-layout">
+          
+          <!-- STEP 1 PANEL: 企划设计 -->
+          <div class="step-panel active" id="panelStep1">
+            <div class="welcome-section" id="welcomeSection">
+              <div class="category-tabs">
+                <button class="tab-btn active" data-tab="plan">
+                  <span class="tab-icon">📑</span> 企划案
+                </button>
+                <button class="tab-btn" data-tab="apparel">
+                  <span class="tab-icon">⚡</span> 服装设计
+                </button>
+                <button class="tab-btn" data-tab="pattern">
+                  <span class="tab-icon">🎨</span> 图案设计
+                </button>
+              </div>
+
+              <div class="suggestions-container">
+                <div class="suggestion-title">试试这样说</div>
+                <div class="suggestion-cards">
+                  <div class="suggestion-card" data-prompt="以 ZIMMERMANN 的 RESORT 2026 系列作为设计灵感，需要包含 短款外套、衬衫连衣裙、印花连衣裙、半裙，生成一份 女装 主题设计企划。">
+                    以 ZIMMERMANN 的 RESORT 2026 系列作为设计灵感，需要包含短款外套、衬衫连衣裙、印花连衣裙、半裙，生成一份女装主题设计企划。
+                  </div>
+                  <div class="suggestion-card" data-prompt="以 PDF 的 2025秋冬系列作为设计灵感，需要包含 印花外套、棒球外套、卫衣、毛衣、长裤，生成一份 男童 主题设计企划。">
+                    以 PDF 的 2025秋冬系列作为设计灵感需要包含印花外套、棒球外套、卫衣、毛衣、长裤生成一份男童主题设计企划。
+                  </div>
+                </div>
+              </div>
+
+              <!-- Structured Template Prompt Box -->
+              <div class="prompt-box-card">
+                <div class="prompt-sentence-builder" contenteditable="true" id="sentenceBuilder" spellcheck="false">以 <span class="editable-slot tag-brand" id="slotBrand">LOUIS VUITTON</span> 的 <span class="editable-slot tag-season" id="slotSeason">2026年春夏</span> 系列作为设计灵感，需要包含 <span class="editable-slot tag-categories" id="slotCategories">短款外套、衬衫、卫衣、短袖、长裤、短裤</span>，生成一份 <span class="editable-slot tag-gender" id="slotGender">男装</span> 主题设计企划。</div>
+                <button id="sendPromptBtn" class="send-circle-btn" title="提交灵感构思">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                    <polyline points="5 12 12 5 19 12"></polyline>
+                  </svg>
+                </button>
+              </div>
+              
+              <div class="history-link">
+                <span>查看历史企划记录 →</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2 PANEL: 图片筛选 -->
+          <div class="step-panel" id="panelStep2">
+            <div class="bot-content-wrapper">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <span class="badge-tag">🚩 联网 API 爬虫 & VLM 智能筛选</span>
+                <span style="font-size: 11.5px; color: #38bdf8;">🌐 已连接 Vogue Runway / Tagwalk / Unsplash API</span>
+              </div>
+
+              <div class="bot-instruction-text" id="step2InstructionText">
+                <div style="font-size: 13px; color: #9ca3af; margin-bottom: 8px;">
+                  • 已根据您的提示词搜索并抓取各大潮流网站最新服装大图<br>
+                  • 大模型视觉智能体 (VLM Agent) 已完成二阶段匹配度打分与过滤
+                </div>
+                请从以下精选出的服装图片中选择您认为最能代表<strong>“静默的浮光掠影 (Silent Radiance)”</strong>主题的参考图片，并确认进入下一步。
+              </div>
+
+              <!-- 秀场图库 15 宫格网格 -->
+              <div class="gallery-grid" id="runwayGalleryGrid"></div>
+
+              <!-- 底部控制栏 -->
+              <div class="gallery-action-bar">
+                <div class="selection-summary">
+                  <span>已精选参考图片:</span>
+                  <span class="badge-count" id="selectedCountBadge">3</span>
+                  <span>/ 15</span>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                  <button id="refreshGalleryBtn" class="btn btn-outline btn-sm">换一批秀场图</button>
+                  <button id="confirmSelectionBtn" class="btn btn-primary btn-sm">
+                    确认所选图片并进入下一步（关键图片生成） →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3 PANEL: 关键图片生成 -->
+          <div class="step-panel" id="panelStep3">
+            <div class="bot-content-wrapper" id="generationStreamContent">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                <span class="badge-tag">AI 多维度协同生图流水线</span>
+                <span style="font-size: 12px; color: #10b981;">IP-Adapter 风格特征注入中...</span>
+              </div>
+
+              <!-- 维度 1: 设计主题情绪板 -->
+              <div class="generation-step-card" id="stepMoodboard">
+                <div class="step-header">
+                  <svg class="step-status-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  <span>已完成设计主题部分图像生成 (Design Theme Moodboard)</span>
+                </div>
+                <div class="gen-cards-row" id="moodboardGenRow"></div>
+              </div>
+
+              <!-- 维度 2: 流行色搭配与面料肌理 -->
+              <div class="generation-step-card" id="stepPalette">
+                <div class="step-header">
+                  <svg class="step-status-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  <span>已完成流行色搭配与面料质感部分图像生成 (Color Palette & Texture)</span>
+                </div>
+                <div class="gen-cards-row" id="paletteGenRow"></div>
+              </div>
+
+              <!-- 维度 3: 关键造型秀场全身效果 -->
+              <div class="generation-step-card" id="stepSilhouettes">
+                <div class="step-header">
+                  <svg class="step-status-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  <span>已完成关键造型部分图像生成 (Key Runway Silhouettes)</span>
+                </div>
+                <div class="gen-cards-row" id="silhouettesGenRow"></div>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                <button id="goToStep4Btn" class="btn btn-primary">
+                  进入下一步（企划文案生成） →
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 4 PANEL: 企划文案生成 -->
+          <div class="step-panel" id="panelStep4">
+            <div class="bot-content-wrapper">
+              <div class="badge-tag">✔ 深度特征提取与企划文案生成</div>
+              <div class="bot-instruction-text">
+                已对您选择的图片与要求进行分析，提取出以下设计企划关键信息（支持在线修改与自定义）：
+              </div>
+
+              <div class="feature-analysis-section" id="featureAnalysisContent"></div>
+
+              <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                <button id="goToStep5Btn" class="btn btn-primary">
+                  进入下一步（生成 PPT 文档） →
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 5 PANEL: 生成ppt -->
+          <div class="step-panel" id="panelStep5">
+            <div class="bot-content-wrapper">
+              <div class="format-selector-card" id="formatSelectorCard">
+                <div class="badge-tag">🚩 成果输出与 PPT 文档生成</div>
+                <div class="bot-instruction-text">
+                  请选择您希望的最终文件呈现格式：<strong>PPT、网页、或 PPT和网页</strong>。
+                </div>
+
+                <div class="format-options-grid">
+                  <div class="format-option-item selected" data-format="combo">
+                    <div class="format-icon-wrap">
+                      <div class="format-icon-combo">
+                        <div class="format-icon-ppt" style="transform: scale(0.85);">PPT</div>
+                        <div class="format-icon-web" style="transform: scale(0.85);">
+                          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="format-label">PPT 和 网页</div>
+                  </div>
+
+                  <div class="format-option-item" data-format="ppt">
+                    <div class="format-icon-wrap">
+                      <div class="format-icon-ppt">PPT</div>
+                    </div>
+                    <div class="format-label">PPT 商业提案</div>
+                  </div>
+
+                  <div class="format-option-item" data-format="web">
+                    <div class="format-icon-wrap">
+                      <div class="format-icon-web">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="2" y1="12" x2="22" y2="12"></line>
+                          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="format-label">网页 交互看板</div>
+                  </div>
+                </div>
+
+                <button id="finalSubmitBtn" class="submit-req-btn ready">
+                  提交需求并生成 PPT 企划案
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </main>
+      </div> <!-- end .main-content-wrapper -->
+    </div> <!-- end .app-body -->
+
+    <!-- Floating Chat Input Bar (Bottom fixed) -->
+    <footer class="bottom-input-bar" id="bottomInputBar">
+      <div class="input-inner">
+        <input type="text" id="followUpInput" class="follow-up-input" placeholder="输入追加修改意见，如：'增加一些丝绒面料' 或 '色调再偏大地色系一些'...">
+        <button id="followUpSendBtn" class="btn btn-primary btn-sm">发送指令</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- API Configuration Modal -->
+  <div class="modal-overlay" id="apiModal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">AI 大模型与生图引擎配置</h3>
+        <button class="modal-close-btn" id="closeModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">运行模式</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input type="radio" name="modeRadio" value="demo" checked>
+              <span>高质量离线推演模式 (内置高保真时尚库，即开即用)</span>
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="modeRadio" value="live">
+              <span>自定义 API Key 直连模式 (调用真实大模型)</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="liveConfigFields" style="display: none;">
+          <div class="form-group">
+            <label class="form-label">OpenAI / Compatible API Key (对话与VLM筛选)</label>
+            <input type="password" id="apiKeyInput" class="form-input" placeholder="sk-...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">API Base URL (留空默认官方)</label>
+            <input type="text" id="apiBaseUrlInput" class="form-input" placeholder="https://api.openai.com/v1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">时装搜索/爬虫 API (Unsplash / Serper / Firecrawl API Key)</label>
+            <input type="password" id="searchApiKeyInput" class="form-input" placeholder="输入搜索或爬虫 API Key (用于实时拉取 Vogue Runway 图库)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">图像生成服务 (ComfyUI / Replicate / SiliconFlow API)</label>
+            <input type="text" id="imgApiInput" class="form-input" placeholder="https://api.siliconflow.cn/v1/images/generations">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="saveConfigBtn" class="btn btn-primary">保存配置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Zoom Lightbox Modal -->
+  <div class="lightbox-overlay" id="lightboxModal" style="display: none;">
+    <div class="lightbox-content">
+      <img id="lightboxImg" src="" alt="放大预览">
+      <button class="lightbox-close" id="closeLightboxBtn">&times;</button>
+      <div class="lightbox-caption" id="lightboxCaption"></div>
+    </div>
+  </div>
+
+  <!-- Interactive Digital Moodboard Modal (Web View) -->
+  <div class="deck-modal-overlay" id="digitalDeckModal" style="display: none;">
+    <div class="deck-modal-container">
+      <div class="deck-modal-header">
+        <div class="deck-brand-title">
+          <span class="deck-badge">DIGITAL MOODBOARD</span>
+          <h2 id="deckProjectTitle">2026春夏 女装静奢主义主题企划案</h2>
+        </div>
+        <div class="deck-header-actions">
+          <button id="deckDownloadPptBtn" class="btn btn-primary btn-sm">
+            <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            导出 PPTX
+          </button>
+          <button id="deckPrintBtn" class="btn btn-secondary btn-sm">打印 / 另存为 PDF</button>
+          <button class="modal-close-btn" id="closeDeckModalBtn">&times;</button>
+        </div>
+      </div>
+
+      <div class="deck-modal-body" id="deckContent"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
