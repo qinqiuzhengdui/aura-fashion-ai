@@ -1728,3 +1728,81 @@ body {
   object-fit: cover;
   border-radius: 4px;
 }
+
+/* Admin Dashboard & RAG Studio Styles */
+.admin-card {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  transition: border-color 0.25s ease, transform 0.25s ease;
+}
+
+.admin-card:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.picker-column {
+  transition: all 0.2s ease;
+}
+
+.picker-column:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
+.login-tab-btn:hover {
+  color: #fff !important;
+}
+
+#trainingProgressBar {
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.6);
+}
+
+#trainingLogTerminal::-webkit-scrollbar,
+#textPreviewList::-webkit-scrollbar,
+#imagePreviewGrid::-webkit-scrollbar,
+#ragRetrievedChunksList::-webkit-scrollbar {
+  width: 5px;
+}
+
+#trainingLogTerminal::-webkit-scrollbar-thumb,
+#textPreviewList::-webkit-scrollbar-thumb,
+#imagePreviewGrid::-webkit-scrollbar-thumb,
+#ragRetrievedChunksList::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+/* ModelScope Dedicated PPT Studio Styles */
+.engine-card {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.engine-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.6) !important;
+}
+.engine-card.selected {
+  border-color: #38bdf8 !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.25) !important;
+}
+
+.slide-preview-card {
+  transition: all 0.2s ease;
+}
+.slide-preview-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(56, 189, 248, 0.5) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+#pptProgressBar {
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+}
+
+#pptLogTerminal::-webkit-scrollbar {
+  width: 5px;
+}
+#pptLogTerminal::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 3px;
+}
+
+

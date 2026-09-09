@@ -44,9 +44,19 @@
         <p class="login-subtitle">AI-POWERED FASHION INSPIRATION & CONCEPT STUDIO</p>
       </div>
 
+      <!-- 身份角色切换 Tab (设计师 / 系统管理员) -->
+      <div class="login-tab-switcher" style="display: flex; background: rgba(15, 23, 42, 0.8); padding: 4px; border-radius: 8px; margin-bottom: 18px; border: 1px solid rgba(56, 189, 248, 0.2);">
+        <button type="button" class="login-tab-btn active" id="tabDesignerLogin" style="flex: 1; padding: 7px 10px; font-size: 13px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s; background: #252b36; color: #fff;">
+          👗 设计师企划入口
+        </button>
+        <button type="button" class="login-tab-btn" id="tabAdminLogin" style="flex: 1; padding: 7px 10px; font-size: 13px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s; background: transparent; color: #94a3b8;">
+          🛡️ 系统管理员入口
+        </button>
+      </div>
+
       <form class="login-form" id="loginForm" onsubmit="return false;">
         <div class="form-group">
-          <label class="form-label">设计师账号 / 邮箱</label>
+          <label class="form-label" id="accountFieldLabel">账号 / 邮箱</label>
           <input type="text" id="loginAccount" class="form-input" value="designer@aura-fashion.ai" placeholder="请输入设计师邮箱/账号" required>
         </div>
 
@@ -61,6 +71,7 @@
             <option value="director">品牌创意总监 / Creative Director</option>
             <option value="designer" selected>服装设计师 / Apparel Designer</option>
             <option value="buyer">商品企划买手 / Merchandiser Buyer</option>
+            <option value="admin">系统管理员 / System Administrator</option>
           </select>
         </div>
 
@@ -72,7 +83,7 @@
         </div>
 
         <button type="submit" id="loginSubmitBtn" class="login-btn">
-          <span>进入 AURA 企划工作站</span>
+          <span id="loginBtnText">进入 AURA 企划工作站</span>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
@@ -81,7 +92,7 @@
       </form>
 
       <div class="login-footer">
-        <span>演示账号已预置，点击按钮即可直接登录</span>
+        <span id="loginFooterTip">演示账号已预置，点击按钮即可直接登录</span>
       </div>
     </div>
   </div>
@@ -116,6 +127,10 @@
       </div>
 
       <div class="nav-right">
+        <!-- 管理员专属快捷按钮 -->
+        <button id="adminRAGNavBtn" class="btn btn-primary btn-sm" style="display: none; background: linear-gradient(135deg, #8b5cf6, #6366f1); border: none;" title="进入/退出管理员 RAG 训练工作台">
+          <span>🛡️ 数据集 & RAG 训练中心</span>
+        </button>
         <div class="user-profile-badge" id="userProfileBadge">
           <span class="user-avatar-dot"></span>
           <span class="user-role-name" id="userRoleText">服装设计师</span>
@@ -162,6 +177,13 @@
             <span class="nav-step-badge">5</span>
             <span class="nav-icon">📊</span>
             <span class="nav-text">生成ppt</span>
+          </button>
+          
+          <!-- 管理员专有导航项 -->
+          <button class="sidebar-nav-item" id="navAdminRAG" data-step="admin" style="display: none; border-top: 1px dashed #334155; margin-top: 14px; background: rgba(139, 92, 246, 0.08);">
+            <span class="nav-step-badge" style="background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #fff;">RAG</span>
+            <span class="nav-icon">🧠</span>
+            <span class="nav-text">数据集 & RAG训练</span>
           </button>
         </nav>
 
@@ -335,16 +357,72 @@
             </div>
           </div>
 
-          <!-- STEP 5 PANEL: 生成ppt -->
+          <!-- STEP 5 PANEL: 魔搭社区专属 PPT 生成 AI 引擎与成果交付 -->
           <div class="step-panel" id="panelStep5">
             <div class="bot-content-wrapper">
-              <div class="format-selector-card" id="formatSelectorCard">
-                <div class="badge-tag">🚩 成果输出与 PPT 文档生成</div>
-                <div class="bot-instruction-text">
-                  请选择您希望的最终文件呈现格式：<strong>PPT、网页、或 PPT和网页</strong>。
+              <div class="format-selector-card" id="formatSelectorCard" style="max-width: 980px; margin: 0 auto;">
+                <div class="badge-tag">🚩 第五步 · 魔搭社区专属 PPT AI 演示文稿生成中台</div>
+                <div class="bot-instruction-text" style="font-size: 15px; margin-bottom: 20px;">
+                  依托<strong>魔搭社区（ModelScope）专门用于生成 PPT 的专属 AI 智能体</strong>，智能编排品牌叙事、灵感情绪板、潘通色卡与面料工艺，一键输出符合国际时装工业标准的 16:9 演示文稿。
                 </div>
 
-                <div class="format-options-grid">
+                <!-- 1. 魔搭社区 PPT 专属 AI 引擎选择 -->
+                <div style="margin-bottom: 24px;">
+                  <label style="display: block; font-size: 13.5px; font-weight: 600; color: #cbd5e1; margin-bottom: 12px;">
+                    🤖 选择魔搭社区（ModelScope）专属 PPT 生成 AI 引擎：
+                  </label>
+                  <div class="modelscope-engine-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="engine-card selected" data-engine="chatppt_mcp" style="background: rgba(15, 23, 42, 0.7); border: 2px solid #38bdf8; border-radius: 12px; padding: 18px; cursor: pointer; transition: all 0.25s; position: relative;">
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <div style="font-weight: 700; font-size: 16px; color: #fff;">
+                          <span style="font-size: 18px; margin-right: 6px;">⚡</span> ChatPPT-MCP 智能体
+                        </div>
+                        <span style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 11px; padding: 2px 8px; border-radius: 20px;">魔搭官方精选 · 推荐</span>
+                      </div>
+                      <div style="font-size: 12.5px; color: #94a3b8; line-height: 1.6;">
+                        阿里魔搭社区与必优科技联合打造的专属 PPT 创作智能体，专长于时装商业大纲提炼、视觉层级拆解与高奢演讲编排。
+                      </div>
+                    </div>
+
+                    <div class="engine-card" data-engine="qwen_agent" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 18px; cursor: pointer; transition: all 0.25s;">
+                      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                        <div style="font-weight: 700; font-size: 16px; color: #fff;">
+                          <span style="font-size: 18px; margin-right: 6px;">🧠</span> ModelScope Qwen-Agent
+                        </div>
+                        <span style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); font-size: 11px; padding: 2px 8px; border-radius: 20px;">开源大模型智能体</span>
+                      </div>
+                      <div style="font-size: 12.5px; color: #94a3b8; line-height: 1.6;">
+                        基于魔搭社区开源通义千问指令微调大模型，提供深层次时装学术概念推导与全周期商业波段规划。
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. 视觉母版风格与版式比例选择 -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; background: rgba(0,0,0,0.25); padding: 16px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+                  <div>
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 8px;">
+                      🎨 PPT 母版视觉风格：
+                    </label>
+                    <select id="pptStyleSelect" class="form-control" style="width: 100%; background: #0f172a; color: #e2e8f0; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 9px 12px; font-size: 13px;">
+                      <option value="luxury_dark" selected>🌌 高奢极简暗黑 (Luxury Dark & Cyan / 推荐)</option>
+                      <option value="ivory_couture">🏛️ 巴黎高定米白优雅 (Haute Couture Ivory)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 8px;">
+                      📐 幻灯片版式与规格：
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 12px; height: 38px;">
+                      <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); padding: 4px 10px; border-radius: 6px; font-size: 12px;">16:9 宽屏高清</span>
+                      <span style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 10px; border-radius: 6px; font-size: 12px;">标准 7 页全案体系</span>
+                      <span style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 10px; border-radius: 6px; font-size: 12px;">支持可编辑 PPTX</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 3. 输出格式模式选择 -->
+                <div class="format-options-grid" style="margin-bottom: 24px;">
                   <div class="format-option-item selected" data-format="combo">
                     <div class="format-icon-wrap">
                       <div class="format-icon-combo">
@@ -357,14 +435,14 @@
                         </div>
                       </div>
                     </div>
-                    <div class="format-label">PPT 和 网页</div>
+                    <div class="format-label">PPT 和 网页 (全套交付)</div>
                   </div>
 
                   <div class="format-option-item" data-format="ppt">
                     <div class="format-icon-wrap">
                       <div class="format-icon-ppt">PPT</div>
                     </div>
-                    <div class="format-label">PPT 商业提案</div>
+                    <div class="format-label">PPT 商业提案 (.pptx)</div>
                   </div>
 
                   <div class="format-option-item" data-format="web">
@@ -377,24 +455,323 @@
                         </svg>
                       </div>
                     </div>
-                    <div class="format-label">网页 交互看板</div>
+                    <div class="format-label">网页 交互看板 (Digital Deck)</div>
                   </div>
                 </div>
 
-                <!-- 文案扩展与修订功能 -->
-                <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; margin-top: 10px;">
-                  <button id="extendCopyBtnStep5" class="btn btn-outline" style="border-color: #38bdf8; color: #38bdf8; padding: 10px 20px; font-weight: 500;">
-                    <span class="nav-icon">✨</span> AI 智能文案扩写
-                  </button>
-                  <button id="reviseCopyBtnStep5" class="btn btn-outline" style="border-color: #10b981; color: #10b981; padding: 10px 20px; font-weight: 500;">
-                    <span class="nav-icon">✏️</span> 文案修订与优化
+                <!-- 4. 生成按钮与状态进度条 -->
+                <div style="margin-bottom: 24px;">
+                  <button id="finalSubmitBtn" class="submit-req-btn ready" style="width: 100%; padding: 16px 24px; font-size: 16px; font-weight: 600; letter-spacing: 0.5px; background: linear-gradient(135deg, #0ea5e9, #6366f1); border: none; border-radius: 10px; color: #fff; cursor: pointer; box-shadow: 0 8px 20px rgba(14, 165, 233, 0.35); display: flex; justify-content: center; align-items: center; gap: 10px;">
+                    <span>✨</span> 立即调用魔搭专属 AI 生成 PPT 商业企划案
                   </button>
                 </div>
 
-                <button id="finalSubmitBtn" class="submit-req-btn ready">
-                  提交需求并生成 PPT 企划案
+                <!-- 动态生成流水线监控区域 -->
+                <div id="pptGenerationProgress" style="display: none; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="font-weight: 600; color: #38bdf8; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                      <span class="pulse-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #38bdf8;"></span>
+                      <span id="pptStatusText">正在连接魔搭社区 ChatPPT-MCP 服务...</span>
+                    </div>
+                    <div id="pptPercentText" style="font-weight: 700; color: #38bdf8; font-size: 15px;">0%</div>
+                  </div>
+                  <div style="height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 12px;">
+                    <div id="pptProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #38bdf8, #818cf8); transition: width 0.3s ease;"></div>
+                  </div>
+                  <div id="pptLogTerminal" style="font-family: monospace; font-size: 12px; color: #94a3b8; background: #0b0f19; padding: 12px; border-radius: 8px; max-height: 120px; overflow-y: auto; line-height: 1.7;">
+                    <div>[00:00:01] 正在初始化魔搭社区 AI 演示文稿上下文...</div>
+                  </div>
+                </div>
+
+                <!-- 5. 生成结果展示区：幻灯片大纲卡片预览与直接下载动作 -->
+                <div id="pptResultArea" style="display: none;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <div>
+                      <h4 style="margin: 0; font-size: 16px; color: #fff; display: flex; align-items: center; gap: 8px;">
+                        <span>📑</span> 魔搭 AI 幻灯片多页架构预览
+                      </h4>
+                      <div id="pptMetaSummary" style="font-size: 12.5px; color: #94a3b8; margin-top: 4px;">
+                        已由魔搭 ChatPPT 智能体完成 7 页 16:9 高定演示文稿排版
+                      </div>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                      <a id="downloadPptxFileBtn" href="#" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); border: none; padding: 10px 18px; font-weight: 600; font-size: 13.5px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px;">
+                        <span>📥</span> 下载 PPTX 演示文稿
+                      </a>
+                      <button id="openWebDeckBtn" class="btn btn-outline" style="border-color: #38bdf8; color: #38bdf8; padding: 10px 16px; font-weight: 500; font-size: 13.5px; border-radius: 8px;">
+                        <span>🌐</span> 打开全屏数字看板
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- 幻灯片预览流卡片 -->
+                  <div id="slidesPreviewGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-top: 14px;">
+                    <!-- 动态注入每页卡片 -->
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- ADMIN PANEL: 数据集打包与 RAG 训练中心 -->
+          <div class="step-panel" id="panelAdminRAG" style="display: none;">
+            <div class="bot-content-wrapper">
+              <!-- Admin Header Banner -->
+              <div class="admin-header-banner" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(56, 189, 248, 0.1)); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                    <span style="font-size: 24px;">🛡️</span>
+                    <h2 style="margin: 0; color: #fff; font-size: 20px; font-weight: 700;">时装多模态数据集打包与 RAG 检索增强训练中心</h2>
+                    <span style="background: #8b5cf6; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600;">ADMIN CONTROL</span>
+                  </div>
+                  <p style="margin: 0; color: #94a3b8; font-size: 13.5px;">支持分别选择本地服装图片与设计文献，一键打包为高质量多模态数据集，并执行 RAG 向量嵌入训练与效果测试验证。</p>
+                </div>
+                <button id="backToDesignBtn" class="btn btn-outline btn-sm" style="border-color: #8b5cf6; color: #c084fc;">
+                  ← 返回设计师企划工作台
                 </button>
               </div>
+
+              <!-- SECTION 1: 本地数据打包为多模态数据集 -->
+              <div class="admin-card" style="background: #191d24; border: 1px solid #2a3240; border-radius: 12px; padding: 22px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid #2a3240; padding-bottom: 12px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">📦</span>
+                    <span style="color: #38bdf8; font-size: 16px; font-weight: 700;">1. 本地图片与文本打包为时装多模态数据集 (Dataset Packaging)</span>
+                  </div>
+                  <span style="font-size: 12px; color: #94a3b8;">支持本地多选图片与文献一键结构化封装</span>
+                </div>
+
+                <!-- 双列选择区 -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                  <!-- 左列: 本地图片选择区 -->
+                  <div class="picker-column" style="background: #11141a; border: 1px dashed #334155; border-radius: 10px; padding: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                      <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="color: #38bdf8;">🖼️</span>
+                        <strong style="color: #e2e8f0; font-size: 14px;">本地时装图片文件 (Images)</strong>
+                      </div>
+                      <span id="pickedImagesCount" style="font-size: 12px; color: #38bdf8; background: rgba(56, 189, 248, 0.1); padding: 2px 8px; border-radius: 12px;">已选 0 张</span>
+                    </div>
+
+                    <!-- 文件上传按钮 -->
+                    <div style="margin-bottom: 14px;">
+                      <input type="file" id="localImageFileInput" multiple accept="image/*" style="display: none;">
+                      <button type="button" class="btn btn-outline btn-sm" style="width: 100%; border-style: dashed; border-color: #475569; padding: 12px;" onclick="document.getElementById('localImageFileInput').click()">
+                        <span>+ 点击或拖拽选择本地图片 (.jpg, .png, .webp)</span>
+                      </button>
+                    </div>
+
+                    <!-- 图片缩略图预览列表 -->
+                    <div id="imagePreviewGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 180px; overflow-y: auto; padding-right: 4px;">
+                      <div style="grid-column: 1 / -1; text-align: center; color: #64748b; font-size: 12.5px; padding: 20px 0;">
+                        暂未选择图片，可选择秀场图、面料肌理或款式设计图
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 右列: 本地文档/文本选择区 -->
+                  <div class="picker-column" style="background: #11141a; border: 1px dashed #334155; border-radius: 10px; padding: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                      <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="color: #34d399;">📄</span>
+                        <strong style="color: #e2e8f0; font-size: 14px;">本地设计文献与企划说明 (Texts)</strong>
+                      </div>
+                      <span id="pickedDocsCount" style="font-size: 12px; color: #34d399; background: rgba(52, 211, 153, 0.1); padding: 2px 8px; border-radius: 12px;">已选 0 份</span>
+                    </div>
+
+                    <!-- 文档上传按钮与文本编辑 -->
+                    <div style="margin-bottom: 12px; display: flex; gap: 8px;">
+                      <input type="file" id="localDocFileInput" multiple accept=".txt,.md,.json,.pdf" style="display: none;">
+                      <button type="button" class="btn btn-outline btn-sm" style="flex: 1; border-style: dashed; border-color: #475569;" onclick="document.getElementById('localDocFileInput').click()">
+                        <span>+ 上传文献文件 (.txt, .md, .json)</span>
+                      </button>
+                      <button type="button" id="addQuickDocBtn" class="btn btn-secondary btn-sm">
+                        <span>+ 快捷输入文本</span>
+                      </button>
+                    </div>
+
+                    <!-- 文本内容列表预览 -->
+                    <div id="textPreviewList" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto; padding-right: 4px;">
+                      <div style="text-align: center; color: #64748b; font-size: 12.5px; padding: 20px 0;">
+                        暂未导入文献，可上传流行趋势报告、潘通规格或品牌企划说明
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 数据集配置表单与打包动作 -->
+                <div style="background: rgba(15, 23, 42, 0.6); padding: 16px; border-radius: 8px; border: 1px solid #334155;">
+                  <div style="display: grid; grid-template-columns: 2fr 1fr 1.5fr; gap: 14px; margin-bottom: 12px;">
+                    <div>
+                      <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">数据集名称 (Dataset Name):</label>
+                      <input type="text" id="datasetNameInput" class="form-input" value="Chanel-2026SS-HauteCouture-FashionRAG" placeholder="如：Zimmermann-Resort2026-Multimodal">
+                    </div>
+                    <div>
+                      <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">版本号 (Version):</label>
+                      <input type="text" id="datasetVersionInput" class="form-input" value="v1.0.0">
+                    </div>
+                    <div>
+                      <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">时装分类/领域 (Category):</label>
+                      <select id="datasetCategoryInput" class="form-input">
+                        <option value="高定女装企划">高定女装企划 (Haute Couture)</option>
+                        <option value="都会成衣系列">都会成衣系列 (Ready-To-Wear)</option>
+                        <option value="潮流男装设计">潮流男装设计 (Men's Fashion)</option>
+                        <option value="面料与潘通色彩库">面料与潘通色彩库 (Fabrics & Pantone)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style="margin-bottom: 14px;">
+                    <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;">企划特征与知识背景描述 (Description):</label>
+                    <input type="text" id="datasetDescInput" class="form-input" value="包含2026春夏高定秀场参考大图、重磅真丝与斜纹软呢工艺规范及潘通标准色卡" placeholder="简述该数据集的用途与知识特征">
+                  </div>
+
+                  <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button type="button" id="loadSampleDatasetBtn" class="btn btn-outline btn-sm" style="border-color: #38bdf8; color: #38bdf8;">
+                      ⚡ 加载高奢时装预置样本数据 (快速体验)
+                    </button>
+                    <button type="button" id="packageDatasetBtn" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1);">
+                      <span>📦 一键打包为时装多模态训练数据集</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- SECTION 2: 已打包数据集资产库 -->
+              <div class="admin-card" style="background: #191d24; border: 1px solid #2a3240; border-radius: 12px; padding: 22px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid #2a3240; padding-bottom: 10px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">🗂️</span>
+                    <span style="color: #38bdf8; font-size: 16px; font-weight: 700;">2. 已打包多模态数据集资产库 (Packaged Datasets Library)</span>
+                  </div>
+                  <button id="refreshDatasetsBtn" class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 12px;">刷新列表</button>
+                </div>
+
+                <div id="datasetCardsContainer" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
+                  <!-- Dynamic Dataset Cards -->
+                  <div style="grid-column: 1 / -1; text-align: center; color: #64748b; padding: 20px;">正在加载已打包数据集...</div>
+                </div>
+              </div>
+
+              <!-- SECTION 3: AI 训练与 RAG 检索增强工作台 -->
+              <div class="admin-card" style="background: #191d24; border: 1px solid #2a3240; border-radius: 12px; padding: 22px; margin-bottom: 24px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid #2a3240; padding-bottom: 12px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">🚀</span>
+                    <span style="color: #a78bfa; font-size: 16px; font-weight: 700;">3. AI 训练与 RAG 检索增强工作台 (RAG Training & Vector Studio)</span>
+                  </div>
+                  <span class="badge-tag" style="background: rgba(139, 92, 246, 0.2); color: #c084fc; border-color: rgba(139, 92, 246, 0.3);">
+                    🧠 向量切片与嵌入索引构建
+                  </span>
+                </div>
+
+                <!-- 训练参数配置 -->
+                <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.2fr; gap: 16px; background: #11141a; padding: 18px; border-radius: 10px; border: 1px solid #334155; margin-bottom: 18px;">
+                  <div>
+                    <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 6px;">选择训练目标数据集:</label>
+                    <select id="trainDatasetSelect" class="form-input">
+                      <option value="">-- 请选择打包好的数据集 --</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 6px;">
+                      分块大小 (Chunk Size): <span id="chunkSizeVal" style="color: #38bdf8; font-weight: 600;">500</span> 字
+                    </label>
+                    <input type="range" id="chunkSizeRange" min="100" max="1500" step="50" value="500" style="width: 100%; accent-color: #38bdf8;" oninput="document.getElementById('chunkSizeVal').innerText = this.value">
+                  </div>
+
+                  <div>
+                    <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 6px;">
+                      重叠步长 (Overlap): <span id="overlapVal" style="color: #34d399; font-weight: 600;">50</span> 字
+                    </label>
+                    <input type="range" id="overlapRange" min="0" max="200" step="10" value="50" style="width: 100%; accent-color: #34d399;" oninput="document.getElementById('overlapVal').innerText = this.value">
+                  </div>
+
+                  <div>
+                    <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 6px;">多模态嵌入模型 (Embedding):</label>
+                    <select id="embeddingModelSelect" class="form-input">
+                      <option value="qwen-embedding-v3">Qwen-Embedding-v3 (通义向量)</option>
+                      <option value="dense-semantic-128">Dense Semantic (128-D 语义空间)</option>
+                      <option value="clip-fashion-vit">CLIP-Fashion-ViT (多模态视觉)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- 触发训练按钮 -->
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
+                  <button type="button" id="startRAGTrainBtn" class="btn btn-primary" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); padding: 12px 28px; font-size: 14.5px; font-weight: 600;">
+                    <span>⚡ 开始训练并构建 RAG 向量知识库</span>
+                  </button>
+                </div>
+
+                <!-- 训练进度条与监控终端 -->
+                <div id="trainingMonitorCard" style="display: none; background: #0b0f17; border: 1px solid #334155; border-radius: 10px; padding: 16px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span class="status-pulse-dot"></span>
+                      <strong id="trainingStepLabel" style="color: #fff; font-size: 13.5px;">训练进行中: 1/4 解析多模态数据集...</strong>
+                    </div>
+                    <span id="trainingPercentLabel" style="color: #a78bfa; font-weight: 700; font-size: 14px;">25%</span>
+                  </div>
+
+                  <div style="background: #1e293b; height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 14px;">
+                    <div id="trainingProgressBar" style="width: 25%; height: 100%; background: linear-gradient(90deg, #8b5cf6, #38bdf8); transition: width 0.4s ease;"></div>
+                  </div>
+
+                  <!-- 终端日志框 -->
+                  <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">实时训练控制台输出 (Terminal Output):</div>
+                  <pre id="trainingLogTerminal" style="background: #05070a; color: #34d399; font-family: 'Courier New', Courier, monospace; font-size: 12.5px; line-height: 1.6; padding: 12px; border-radius: 6px; border: 1px solid #1e293b; max-height: 160px; overflow-y: auto; margin: 0; white-space: pre-wrap;"></pre>
+                </div>
+              </div>
+
+              <!-- SECTION 4: RAG 检索增强效果即时测试与问答验证 -->
+              <div class="admin-card" style="background: #191d24; border: 1px solid #2a3240; border-radius: 12px; padding: 22px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid #2a3240; padding-bottom: 12px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 18px;">🔍</span>
+                    <span style="color: #34d399; font-size: 16px; font-weight: 700;">4. RAG 检索效果即时测试与问答验证 (Interactive Evaluation)</span>
+                  </div>
+                  <span style="font-size: 12px; color: #94a3b8;">输入时装问题，检验训练后的向量召回与 AI 答案生成</span>
+                </div>
+
+                <!-- 提问输入框 -->
+                <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                  <input type="text" id="ragQueryInput" class="form-input" style="flex: 1; font-size: 14px;" value="该企划核心面料有哪些？织法特性与打板要求是什么？" placeholder="输入你想检验的问题，如：主推潘通色号的心理学分析是什么？">
+                  <button type="button" id="executeRAGQueryBtn" class="btn btn-primary" style="background: #059669; padding: 0 24px;">
+                    <span>🔍 检索并执行 AI 增强推理</span>
+                  </button>
+                </div>
+
+                <!-- 检索结果与回答展示区 -->
+                <div id="ragQueryResultSection" style="display: none;">
+                  <!-- AI Grounded Answer -->
+                  <div style="background: linear-gradient(135deg, rgba(5, 150, 105, 0.1), rgba(15, 23, 42, 0.6)); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 10px; padding: 18px; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                      <span style="font-size: 18px;">💡</span>
+                      <strong style="color: #34d399; font-size: 15px;">AI 检索增强生成回答 (RAG Grounded Response):</strong>
+                    </div>
+                    <div id="ragAnswerContent" style="color: #f1f5f9; font-size: 14px; line-height: 1.8; white-space: pre-wrap;"></div>
+                  </div>
+
+                  <!-- 召回切片与图片展示 -->
+                  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
+                    <!-- 文档切片 -->
+                    <div style="background: #11141a; border: 1px solid #334155; border-radius: 8px; padding: 14px;">
+                      <strong style="color: #38bdf8; font-size: 13px; display: block; margin-bottom: 10px;">📚 检索召回的知识切片 (Retrieved Chunks):</strong>
+                      <div id="ragRetrievedChunksList" style="display: flex; flex-direction: column; gap: 10px; max-height: 220px; overflow-y: auto;"></div>
+                    </div>
+
+                    <!-- 召回图片 -->
+                    <div style="background: #11141a; border: 1px solid #334155; border-radius: 8px; padding: 14px;">
+                      <strong style="color: #a78bfa; font-size: 13px; display: block; margin-bottom: 10px;">🖼️ 关联召回的时装图像 (Matched Images):</strong>
+                      <div id="ragRetrievedImagesList" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 220px; overflow-y: auto;"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 

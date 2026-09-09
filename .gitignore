@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+.browser_data/
+scratch_dashscope.py
+test_dashscope.py
