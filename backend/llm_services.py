@@ -69,6 +69,12 @@ async def generate_flux_ai_assets(prompt: str) -> Dict[str, Any]:
         "notice": "已通过在线实时生成式 AI (Flux.1 / SDXL) 成功生成 9 维度真实企划图像。"
     }
 
+_DASHSCOPE_IN_ARREARAGE = True  # Current key is known to be in Arrearage
+
+def set_dashscope_arrearage(status: bool):
+    global _DASHSCOPE_IN_ARREARAGE
+    _DASHSCOPE_IN_ARREARAGE = status
+
 async def generate_assets_from_prompt(prompt: str, selected_images: List[str]) -> Dict[str, Any]:
     """
     Generate multidimensional fashion images using real AI.
@@ -83,7 +89,7 @@ async def generate_assets_from_prompt(prompt: str, selected_images: List[str]) -
     dashscope_failed = False
     failure_reason = ""
 
-    if DASHSCOPE_API_KEY:
+    if DASHSCOPE_API_KEY and not _DASHSCOPE_IN_ARREARAGE:
         try:
             dashscope.api_key = DASHSCOPE_API_KEY
             loop = asyncio.get_running_loop()
@@ -228,7 +234,7 @@ async def analyze_features_from_images(prompt: str, selected_images: List[str]) 
 """
 
     # 1. 尝试使用阿里云 DashScope (Qwen-VL-Plus) 多模态模型
-    if DASHSCOPE_API_KEY:
+    if DASHSCOPE_API_KEY and not _DASHSCOPE_IN_ARREARAGE:
         try:
             dashscope.api_key = DASHSCOPE_API_KEY
             loop = asyncio.get_running_loop()

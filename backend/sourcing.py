@@ -110,15 +110,13 @@ async def _llm_prescreen(urls: List[str], keywords: str) -> List[Dict]:
                             })
                 except Exception as e:
                     print(f"Failed to screen image {url}: {e}")
-                    # Fallback to keep the image if API fails on a specific image
-                    screened.append({
-                        "id": i + 1,
-                        "src": url,
-                        "title": f"Fallback Screened",
-                        "score": 6
-                    })
+                    # If quota/arrearage/network error, stop trying sequentially to avoid blocking the server
+                    print("DashScope VLM error or quota exhausted, switching to fast scoring immediately.")
+                    break
             
-            return sorted(screened, key=lambda x: x["score"], reverse=True)
+            if len(screened) > 0:
+                return sorted(screened, key=lambda x: x["score"], reverse=True)
+            raise Exception("No images screened via VLM, falling back.")
             
         except Exception as e:
             print(f"VLM Agent Error: {e}. Falling back to mock scoring.")

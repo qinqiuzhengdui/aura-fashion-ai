@@ -29,6 +29,11 @@ app = FastAPI(title="AURA Fashion AI API")
 async def startup_event():
     init_db()
 
+@app.get("/v1/health")
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -153,6 +158,11 @@ async def update_dashscope_config(req: ApiKeyUpdateRequest):
     # 验证成功，持久化并更新
     import backend.constants as const
     const.DASHSCOPE_API_KEY = new_key
+    try:
+        from backend.llm_services import set_dashscope_arrearage
+        set_dashscope_arrearage(False)
+    except Exception:
+        pass
     try:
         with open("backend/constants.py", "r", encoding="utf-8") as f:
             content = f.read()
