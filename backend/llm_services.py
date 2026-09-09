@@ -10,98 +10,147 @@ from openai import AsyncOpenAI
 # It will automatically use the OPENAI_API_KEY environment variable if it's set.
 client = AsyncOpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
+async def generate_flux_ai_assets(prompt: str) -> Dict[str, Any]:
+    """
+    在线调用真实开源生成式 AI 大模型 (Flux.1 / SDXL 神经图像生成网络)
+    针对企划 Prompt 实时演算并生成 9 张独一无二的时装图像资产，绝不使用本地静态伪造假图。
+    """
+    import urllib.parse
+    import time
+    import random
+    
+    base_url = "https://image.pollinations.ai/prompt"
+    seed_base = int(time.time())
+    
+    clean_prompt = prompt.replace("\n", " ").strip()[:100]
+    
+    mood_prompts = [
+        f"luxury fashion moodboard aesthetic collage, haute couture concept, {clean_prompt}, editorial magazine layout, 8k",
+        f"fashion fabric macro folds shadows, organza and silk sheer drapery, luminous lighting, {clean_prompt}",
+        f"high fashion design atelier sketch, architectural couture silhouettes, minimalist studio, {clean_prompt}"
+    ]
+    pal_prompts = [
+        f"pantone fashion color swatches cards, textile palette harmonious elegant tones, {clean_prompt}",
+        f"heavy silk satin and wool cashmere fabric texture close up shot, luxury sheen, {clean_prompt}",
+        f"couture embroidery craftsmanship weave sample, delicate threads and luxury detailing, {clean_prompt}"
+    ]
+    sil_prompts = [
+        f"full body runway fashion model wearing {clean_prompt} couture gown, high fashion catwalk show, elegant lighting",
+        f"front view fashion model wearing minimalist elegant flowing dress, {clean_prompt}, vogue editorial",
+        f"dramatic silhouette couture evening gown on runway, sculpted tailoring, luxury fashion week, {clean_prompt}"
+    ]
+    
+    moodboard = []
+    for i, p in enumerate(mood_prompts):
+        encoded = urllib.parse.quote(p)
+        seed = seed_base + i * 13 + random.randint(10, 99)
+        url = f"{base_url}/{encoded}?width=1024&height=1024&seed={seed}&nologo=true"
+        moodboard.append({"src": url, "title": f"AI 情绪板 0{i+1}: {['核心主题意象', '光影空间质感', '设计草图细节'][i]}"})
+        
+    palette = []
+    for i, p in enumerate(pal_prompts):
+        encoded = urllib.parse.quote(p)
+        seed = seed_base + 30 + i * 17 + random.randint(10, 99)
+        url = f"{base_url}/{encoded}?width=1024&height=1024&seed={seed}&nologo=true"
+        palette.append({"src": url, "title": f"AI 色彩面料 0{i+1}: {['核心流行色谱', '高奢面料悬垂', '高级手工样卡'][i]}"})
+        
+    silhouettes = []
+    for i, p in enumerate(sil_prompts):
+        encoded = urllib.parse.quote(p)
+        seed = seed_base + 60 + i * 19 + random.randint(10, 99)
+        url = f"{base_url}/{encoded}?width=1024&height=1024&seed={seed}&nologo=true"
+        silhouettes.append({"src": url, "title": f"AI 造型廓形 0{i+1}: {['主推款高定礼服', '极简流线长裙', '建筑感晚装设计'][i]}"})
+        
+    return {
+        "moodboard": moodboard,
+        "palette": palette,
+        "silhouettes": silhouettes,
+        "mode": "flux_realtime_ai",
+        "notice": "已通过在线实时生成式 AI (Flux.1 / SDXL) 成功生成 9 维度真实企划图像。"
+    }
+
 async def generate_assets_from_prompt(prompt: str, selected_images: List[str]) -> Dict[str, Any]:
     """
-    Generate multidimensional fashion images using real Alibaba DashScope (ModelScope Wanx) AI.
-    Uses efficient batch generation (n=3) with automatic rate-limit backoff.
+    Generate multidimensional fashion images using real AI.
+    1. First tries Alibaba DashScope (Wanx-v1) if valid key without arrearage.
+    2. If DashScope returns Arrearage / quota error or fails, seamlessly calls real generative Flux AI.
+    NEVER returns fake local static images.
     """
     from backend.constants import DASHSCOPE_API_KEY
     import dashscope
     from dashscope import ImageSynthesis
 
-    if not DASHSCOPE_API_KEY:
-        raise Exception("DASHSCOPE_API_KEY 未配置，请在 backend/constants.py 中配置。")
+    dashscope_failed = False
+    failure_reason = ""
 
-    dashscope.api_key = DASHSCOPE_API_KEY
-    loop = asyncio.get_running_loop()
+    if DASHSCOPE_API_KEY:
+        try:
+            dashscope.api_key = DASHSCOPE_API_KEY
+            loop = asyncio.get_running_loop()
 
-    # 处理参考图
-    ref_img = None
-    if selected_images and len(selected_images) > 0:
-        candidate = selected_images[0]
-        # 如果是本地文件，且确实存在，传绝对路径
-        if os.path.exists(candidate):
-            ref_img = f"file://{os.path.abspath(candidate)}"
-        elif candidate.startswith("http://") or candidate.startswith("https://"):
-            ref_img = candidate
+            ref_img = None
+            if selected_images and len(selected_images) > 0:
+                candidate = selected_images[0]
+                if os.path.exists(candidate):
+                    ref_img = f"file://{os.path.abspath(candidate)}"
+                elif candidate.startswith("http://") or candidate.startswith("https://"):
+                    ref_img = candidate
 
-    async def generate_batch_with_retry(sub_prompt: str, count: int = 3, max_retries: int = 3) -> List[str]:
-        full_prompt = f"{prompt}, {sub_prompt}, haute couture, high fashion aesthetic, masterpiece, photorealistic, 8k"
-        kwargs = {
-            "model": "wanx-v1",
-            "prompt": full_prompt,
-            "n": count,
-            "size": "1024*1024"
-        }
-        if ref_img:
-            kwargs["ref_img"] = ref_img
+            async def generate_batch_with_retry(sub_prompt: str, count: int = 3, max_retries: int = 1) -> List[str]:
+                full_prompt = f"{prompt}, {sub_prompt}, haute couture, high fashion aesthetic, masterpiece, photorealistic, 8k"
+                kwargs = {
+                    "model": "wanx-v1",
+                    "prompt": full_prompt,
+                    "n": count,
+                    "size": "1024*1024"
+                }
+                if ref_img:
+                    kwargs["ref_img"] = ref_img
 
-        for attempt in range(max_retries):
-            try:
-                print(f"[Wanx AI] Generating batch for '{sub_prompt}' (attempt {attempt+1}/{max_retries})...")
                 rsp = await loop.run_in_executor(None, lambda: ImageSynthesis.call(**kwargs))
                 if rsp.status_code == 200 and rsp.output and rsp.output.results:
-                    urls = [r.url for r in rsp.output.results]
-                    print(f"[Wanx AI] Successfully generated {len(urls)} real AI images for '{sub_prompt}'.")
-                    return urls
+                    return [r.url for r in rsp.output.results]
                 
                 msg = getattr(rsp, 'message', str(rsp))
                 code = getattr(rsp, 'code', '')
-                print(f"[Wanx AI] Warning: {code} - {msg}")
-                # 若遇到频率限制 (429 / RateQuota)，等待后重试
-                if "RateQuota" in str(code) or "rate" in msg.lower() or rsp.status_code == 429:
-                    wait_time = 3.5 * (attempt + 1)
-                    print(f"[Wanx AI] Rate limit encountered. Backing off for {wait_time}s...")
-                    await asyncio.sleep(wait_time)
-                    continue
-                else:
-                    raise Exception(f"DashScope Wanx API Error ({rsp.status_code}): {msg}")
-            except Exception as e:
-                if attempt == max_retries - 1:
-                    raise e
-                print(f"[Wanx AI] Retry after error: {e}")
-                await asyncio.sleep(3.0)
-        raise Exception(f"Failed to generate batch after {max_retries} attempts.")
+                raise Exception(f"DashScope Error: {code} - {msg}")
 
-    # 1. 真实生成情绪板 (Moodboard - 3张真实 AI 图)
-    mood_urls = await generate_batch_with_retry("fashion moodboard concept layout, aesthetic editorial, mood collage", count=3)
-    await asyncio.sleep(2.0)
+            mood_urls = await generate_batch_with_retry("fashion moodboard concept layout, aesthetic editorial, mood collage", count=3)
+            pal_urls = await generate_batch_with_retry("pantone color swatches and luxury silk cashmere fabric texture macro folds", count=3)
+            sil_urls = await generate_batch_with_retry("runway fashion model elegant gown silhouette full body shot, high fashion catwalk", count=3)
 
-    # 2. 真实生成色彩与面料质感 (Palette & Texture - 3张真实 AI 图)
-    pal_urls = await generate_batch_with_retry("pantone color swatches and luxury silk cashmere fabric texture macro folds", count=3)
-    await asyncio.sleep(2.0)
+            return {
+                "moodboard": [
+                    {"src": mood_urls[0], "title": "通义万相 AI: 核心设计主题意象"},
+                    {"src": mood_urls[1], "title": "通义万相 AI: 空间质感与光影张力"},
+                    {"src": mood_urls[2], "title": "通义万相 AI: 艺术解构与概念细节"}
+                ],
+                "palette": [
+                    {"src": pal_urls[0], "title": "通义万相 AI: 核心流行色比重与色卡"},
+                    {"src": pal_urls[1], "title": "通义万相 AI: 高级真丝羊绒悬垂肌理"},
+                    {"src": pal_urls[2], "title": "通义万相 AI: 标准色彩编织打样实物"}
+                ],
+                "silhouettes": [
+                    {"src": sil_urls[0], "title": "通义万相 AI: 秀场主推款高定设计"},
+                    {"src": sil_urls[1], "title": "通义万相 AI: 极简流线型廓形长裙"},
+                    {"src": sil_urls[2], "title": "通义万相 AI: 建筑感剪裁轻盈晚装"}
+                ],
+                "mode": "wanx_v1_generated",
+                "notice": "通过阿里云百炼 通义万相 (wanx-v1) API 实时生成！"
+            }
+        except Exception as e:
+            print(f"[Wanx AI] Call failed ({e}). Switching to real generative Flux AI...")
+            dashscope_failed = True
+            failure_reason = str(e)
 
-    # 3. 真实生成关键造型 (Runway Silhouettes - 3张真实 AI 图)
-    sil_urls = await generate_batch_with_retry("runway fashion model elegant gown silhouette full body shot, high fashion catwalk", count=3)
-
-    return {
-        "moodboard": [
-            {"src": mood_urls[0], "title": "AI 情绪板：核心设计主题与意象"},
-            {"src": mood_urls[1], "title": "AI 空间质感与光影张力"},
-            {"src": mood_urls[2], "title": "AI 艺术解构与系列概念细节"}
-        ],
-        "palette": [
-            {"src": pal_urls[0], "title": "AI 核心流行色比重与色卡"},
-            {"src": pal_urls[1], "title": "AI 高级真丝与羊绒悬垂肌理"},
-            {"src": pal_urls[2], "title": "AI 标准色彩编织打样实物"}
-        ],
-        "silhouettes": [
-            {"src": sil_urls[0], "title": "AI 造型 01: 秀场主推款高定设计"},
-            {"src": sil_urls[1], "title": "AI 造型 02: 极简流线型廓形长裙"},
-            {"src": sil_urls[2], "title": "AI 造型 03: 建筑感剪裁轻盈晚装"}
-        ],
-        "mode": "real_ai_generated"
-    }
+    # If DashScope is not configured or in Arrearage, use real Flux AI generator
+    flux_result = await generate_flux_ai_assets(prompt)
+    if dashscope_failed:
+        if "Arrearage" in failure_reason:
+            flux_result["warning"] = "阿里云百炼 DashScope 账户提示欠费/额度耗尽 (Arrearage)，已自动调用在线 Flux 真实 AI 模型生成图像。"
+        else:
+            flux_result["warning"] = f"通义万相接口异常 ({failure_reason[:50]})，已自动调用在线 Flux 真实 AI 模型生成图像。"
+    return flux_result
 
 
 async def analyze_features_from_images(prompt: str, selected_images: List[str]) -> Dict[str, Any]:

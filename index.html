@@ -797,44 +797,41 @@
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label class="form-label">运行模式</label>
+          <label class="form-label">核心 AI 图像与文案生成引擎</label>
           <div class="radio-group">
             <label class="radio-label">
-              <input type="radio" name="modeRadio" value="demo" checked>
-              <span>高质量离线推演模式 (内置高保真时尚库，即开即用)</span>
+              <input type="radio" name="modeRadio" value="auto_real_ai" checked>
+              <span>双引擎全自动调用 (优先通义万相，若百炼欠费自动使用在线 Flux 真实 AI)</span>
             </label>
             <label class="radio-label">
-              <input type="radio" name="modeRadio" value="deepseek">
-              <span>默认AI ： deepseek</span>
+              <input type="radio" name="modeRadio" value="flux_only">
+              <span>在线实时 Flux.1 / SDXL 图像大模型 (实时演算，完全免费稳定)</span>
             </label>
             <label class="radio-label">
-              <input type="radio" name="modeRadio" value="live">
-              <span>自定义 API Key 直连模式 (调用真实大模型)</span>
+              <input type="radio" name="modeRadio" value="dashscope_only">
+              <span>仅使用阿里云百炼 通义万相 wanx-v1 (需百炼账户余额充足)</span>
             </label>
           </div>
         </div>
 
-        <div id="liveConfigFields" style="display: none;">
-          <div class="form-group">
-            <label class="form-label">OpenAI / Compatible API Key (对话与VLM筛选)</label>
-            <input type="password" id="apiKeyInput" class="form-input" placeholder="sk-...">
-          </div>
-          <div class="form-group">
-            <label class="form-label">API Base URL (留空默认官方)</label>
-            <input type="text" id="apiBaseUrlInput" class="form-input" placeholder="https://api.openai.com/v1">
-          </div>
-          <div class="form-group">
-            <label class="form-label">时装搜索/爬虫 API (Unsplash / Serper / Firecrawl API Key)</label>
-            <input type="password" id="searchApiKeyInput" class="form-input" placeholder="输入搜索或爬虫 API Key (用于实时拉取 Vogue Runway 图库)">
-          </div>
-          <div class="form-group">
-            <label class="form-label">图像生成服务 (ComfyUI / Replicate / SiliconFlow API)</label>
-            <input type="text" id="imgApiInput" class="form-input" placeholder="https://api.siliconflow.cn/v1/images/generations">
+        <div style="margin-top: 16px; padding: 16px; background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 8px;">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="form-label" style="margin-bottom: 0;">阿里云百炼 (DashScope) API Key</label>
+              <span id="dashscopeKeyStatusBadge" style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4);">检测中...</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <input type="password" id="dashscopeKeyInput" class="form-input" style="flex: 1;" placeholder="sk-426e... (粘贴您的百炼 API Key)">
+              <button id="testDashscopeKeyBtn" class="btn btn-outline btn-sm" style="white-space: nowrap;">测试连接</button>
+            </div>
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 6px;">
+              💡 提示：可在打开的「大模型服务平台百炼」控制台复制新的 API Key，粘贴在此处即可实时生效。
+            </div>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button id="saveConfigBtn" class="btn btn-primary">保存配置</button>
+        <button id="saveConfigBtn" class="btn btn-primary">保存并应用配置</button>
       </div>
     </div>
   </div>

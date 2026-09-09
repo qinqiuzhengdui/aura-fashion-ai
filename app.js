@@ -500,12 +500,18 @@ function renderStep3Generation() {
   const promptText = document.getElementById('sentenceBuilder') ? document.getElementById('sentenceBuilder').innerText.trim() : state.projectData.theme;
   
   // Get the selected runway image URLs
-  const selectedImageUrls = state.selectedImages.map(id => {
-    const img = RUNWAY_IMAGES.find(r => r.id === id);
+  const selectedImageUrls = (state.selectedImages || []).map(id => {
+    const img = (typeof RUNWAY_IMAGES !== 'undefined' ? RUNWAY_IMAGES : []).find(r => r.id === id);
     return img ? img.src : null;
   }).filter(src => src !== null);
 
-  const loadingHtml = '<div style="color:white; padding: 20px; font-size: 14px;">🪄 正在调用通义万相 (ModelScope) 结合参考图生成多维度企划资产，请稍候...</div>';
+  const loadingHtml = `
+    <div style="grid-column: 1 / -1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding: 40px 20px; background: rgba(15,23,42,0.6); border: 1px dashed rgba(56,189,248,0.4); border-radius:12px; width:100%; text-align:center;">
+      <div class="loading-spinner" style="width:32px; height:32px; border:3px solid rgba(255,255,255,0.1); border-top-color:#38bdf8; border-radius:50%; animation:spin 1s linear infinite;"></div>
+      <div style="color: #38bdf8; font-size: 15px; font-weight: 600;">正在调用真实 AI 图像生成大模型实时演算中...</div>
+      <div style="color: #94a3b8; font-size: 13px;">结合 ${selectedImageUrls.length > 0 ? selectedImageUrls.length + ' 张精选参考图与' : ''}设计要求，正在通过 API 实时演算高保真时装视觉资产</div>
+    </div>
+  `;
   if (moodRow) moodRow.innerHTML = loadingHtml;
   if (palRow) palRow.innerHTML = loadingHtml;
   if (silRow) silRow.innerHTML = loadingHtml;
@@ -515,7 +521,7 @@ function renderStep3Generation() {
     if (moodRow && assets.moodboard) {
       moodRow.innerHTML = assets.moodboard.map(item => `
         <div class="gen-image-item">
-          <img src="${item.src}" alt="${item.title}">
+          <img src="${item.src}" alt="${item.title}" loading="lazy">
           <div class="gen-image-caption">${item.title}</div>
         </div>
       `).join('');
@@ -523,7 +529,7 @@ function renderStep3Generation() {
     if (palRow && assets.palette) {
       palRow.innerHTML = assets.palette.map(item => `
         <div class="gen-image-item">
-          <img src="${item.src}" alt="${item.title}">
+          <img src="${item.src}" alt="${item.title}" loading="lazy">
           <div class="gen-image-caption">${item.title}</div>
         </div>
       `).join('');
@@ -531,7 +537,7 @@ function renderStep3Generation() {
     if (silRow && assets.silhouettes) {
       silRow.innerHTML = assets.silhouettes.map(item => `
         <div class="gen-image-item">
-          <img src="${item.src}" alt="${item.title}">
+          <img src="${item.src}" alt="${item.title}" loading="lazy">
           <div class="gen-image-caption">${item.title}</div>
         </div>
       `).join('');
@@ -539,29 +545,6 @@ function renderStep3Generation() {
     if (notice) {
       showNotification(`✨ ${notice}`);
     }
-  }
-
-  function applyFallbackAssets(reason) {
-    const fallbackData = {
-      moodboard: [
-        { src: 'assets/generated/mood_1.png', title: '情绪板：晨曦微光与丝质流动' },
-        { src: 'assets/generated/mood_2.png', title: '光影与褶皱空间肌理' },
-        { src: 'assets/generated/mood_3.png', title: '艺术解构与复古静谧细节' },
-        { src: 'assets/generated/mood_4.png', title: '系列线稿与设计草图矩阵' }
-      ],
-      palette: [
-        { src: 'assets/generated/pal_1.png', title: '核心流行色与面料光泽' },
-        { src: 'assets/generated/pal_2.png', title: '重磅真丝与亚麻编织' },
-        { src: 'assets/generated/pal_3.png', title: '自然矿物与温润调性' }
-      ],
-      silhouettes: [
-        { src: 'assets/generated/sil_1.png', title: '造型 01: 核心主推款高定设计' },
-        { src: 'assets/generated/sil_2.png', title: '造型 02: 极简流线型廓形长裙' },
-        { src: 'assets/generated/sil_3.png', title: '造型 03: 建筑感剪裁轻盈晚装' },
-        { src: 'assets/generated/sil_4.png', title: '造型 04: 不对称斜裁箱型外套' }
-      ]
-    };
-    applyAssetsToUI(fallbackData, reason);
   }
 
   fetch('/api/generate_images', {
@@ -572,15 +555,38 @@ function renderStep3Generation() {
   .then(async res => {
     const data = await res.json();
     if (!res.ok || !data.success || !data.data) {
-      applyFallbackAssets('已自动切换至高保真本地离线生图模式');
+      const errMsg = (data && data.detail) ? data.detail : '生图接口调用失败';
+      showGenError(errMsg);
     } else {
-      applyAssetsToUI(data.data, data.data.mode === 'offline_fallback' ? '已自动启用本地高保真资产库（离线协同模式）' : '');
+      applyAssetsToUI(data.data, data.data.notice || '');
+      if (data.data.warning) {
+        setTimeout(() => {
+          showNotification(`⚡ ${data.data.warning}`);
+        }, 800);
+      }
     }
   })
   .catch(err => {
-    console.warn('Network offline or image generation failed, using local high-fashion assets:', err);
-    applyFallbackAssets('当前网络离线，已为您自动启动本地高保真协同生图');
+    console.error('Real image generation API error:', err);
+    showGenError(err.message || '网络连接失败');
   });
+
+  function showGenError(errText) {
+    const errHtml = `
+      <div style="grid-column: 1 / -1; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.4); border-radius: 12px; padding: 28px; text-align: center; color: #fca5a5; width: 100%;">
+        <div style="font-size: 24px; margin-bottom: 8px;">⚠️</div>
+        <div style="font-size: 15px; font-weight: 600; margin-bottom: 8px;">AI 图像生成 API 调用异常</div>
+        <div style="font-size: 13px; color: #f87171; max-width: 600px; margin: 0 auto 16px;">${errText}</div>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button class="btn btn-outline btn-sm" onclick="renderStep3Generation()">🔄 立即重试调用 API</button>
+          <button class="btn btn-primary btn-sm" onclick="document.getElementById('apiModal').style.display='flex'">⚙️ 配置百炼 API Key</button>
+        </div>
+      </div>
+    `;
+    if (moodRow) moodRow.innerHTML = errHtml;
+    if (palRow) palRow.innerHTML = '';
+    if (silRow) silRow.innerHTML = '';
+  }
 }
 
 // 渲染 Step 4: 企划文案与潘通特征解析
@@ -1184,34 +1190,98 @@ function openLightbox(src, caption) {
 
 function initApiConfigModal() {
   const modal = document.getElementById('apiModal');
+  const badge = document.getElementById('dashscopeKeyStatusBadge');
+  const keyInput = document.getElementById('dashscopeKeyInput');
+  const testBtn = document.getElementById('testDashscopeKeyBtn');
+
+  function checkKeyStatus() {
+    if (!badge) return;
+    fetch('/api/config/dashscope')
+      .then(res => res.json())
+      .then(data => {
+        if (data.is_configured) {
+          badge.innerText = `已设置 (${data.masked_key})`;
+          badge.style.background = 'rgba(16, 185, 129, 0.2)';
+          badge.style.color = '#34d399';
+          badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+        } else {
+          badge.innerText = '未配置';
+          badge.style.background = 'rgba(239, 68, 68, 0.2)';
+          badge.style.color = '#f87171';
+          badge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        }
+      })
+      .catch(() => {
+        badge.innerText = '连接异常';
+      });
+  }
+
   document.getElementById('apiConfigBtn').onclick = () => {
     modal.style.display = 'flex';
+    checkKeyStatus();
   };
   document.getElementById('closeModalBtn').onclick = () => {
     modal.style.display = 'none';
   };
 
-  const modeRadios = document.querySelectorAll('input[name="modeRadio"]');
-  const liveFields = document.getElementById('liveConfigFields');
-  modeRadios.forEach(radio => {
-    radio.onchange = (e) => {
-      liveFields.style.display = e.target.value === 'live' ? 'block' : 'none';
+  if (testBtn) {
+    testBtn.onclick = async () => {
+      const val = keyInput.value.trim();
+      if (!val) {
+        alert('请先在输入框中粘贴您的 DashScope API Key（以 sk- 开头）');
+        return;
+      }
+      testBtn.innerText = '正在验证...';
+      testBtn.disabled = true;
+      try {
+        const res = await fetch('/api/config/dashscope', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dashscope_api_key: val })
+        });
+        const d = await res.json();
+        if (res.ok && d.success) {
+          alert('🎉 ' + d.message);
+          checkKeyStatus();
+          keyInput.value = '';
+        } else {
+          alert('❌ 验证失败: ' + (d.detail || d.message || 'Key 无效或百炼账户欠费'));
+        }
+      } catch (err) {
+        alert('请求失败: ' + err.message);
+      } finally {
+        testBtn.innerText = '测试连接';
+        testBtn.disabled = false;
+      }
     };
-  });
+  }
 
-  document.getElementById('saveConfigBtn').onclick = () => {
-    const selectedMode = document.querySelector('input[name="modeRadio"]:checked').value;
+  document.getElementById('saveConfigBtn').onclick = async () => {
+    const selectedMode = document.querySelector('input[name="modeRadio"]:checked') ? document.querySelector('input[name="modeRadio"]:checked').value : 'auto_real_ai';
     state.config.mode = selectedMode;
-    if (selectedMode === 'deepseek') {
-      state.config.apiKey = 'sk-fcc7da63eea14850929dd778271fe50e';
-      state.config.apiBaseUrl = 'https://api.deepseek.com/v1';
-    } else if (selectedMode === 'live') {
-      state.config.apiKey = document.getElementById('apiKeyInput').value;
-      state.config.apiBaseUrl = document.getElementById('apiBaseUrlInput').value || 'https://api.openai.com/v1';
+
+    const val = keyInput.value.trim();
+    if (val) {
+      try {
+        const res = await fetch('/api/config/dashscope', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dashscope_api_key: val })
+        });
+        const d = await res.json();
+        if (!res.ok || !d.success) {
+          alert('API Key 保存失败: ' + (d.detail || '未知错误'));
+          return;
+        }
+        showNotification('DashScope API Key 已更新生效！');
+      } catch (e) {
+        alert('网络请求失败: ' + e.message);
+        return;
+      }
     }
+
     modal.style.display = 'none';
-    modal.style.display = 'none';
-    showNotification(`配置已成功保存！(当前模式: ${selectedMode})`);
+    showNotification(`配置已成功应用！(当前模式: ${selectedMode})`);
   };
 }
 

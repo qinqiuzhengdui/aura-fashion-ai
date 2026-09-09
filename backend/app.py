@@ -113,6 +113,62 @@ async def refine_copywriting(req: RefineRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+class ApiKeyUpdateRequest(BaseModel):
+    dashscope_api_key: str
+
+@app.get("/api/config/dashscope")
+async def get_dashscope_config():
+    import backend.constants as const
+    key = const.DASHSCOPE_API_KEY or ""
+    masked = f"{key[:8]}...{key[-4:]}" if len(key) >= 12 else ("已配置" if key else "未配置")
+    return {
+        "success": True,
+        "is_configured": bool(key),
+        "masked_key": masked
+    }
+
+@app.post("/api/config/dashscope")
+async def update_dashscope_config(req: ApiKeyUpdateRequest):
+    new_key = req.dashscope_api_key.strip()
+    if not new_key.startswith("sk-"):
+        raise HTTPException(status_code=400, detail="API Key 格式不正确，应以 sk- 开头")
+    
+    # 测试连接该 Key
+    try:
+        import dashscope
+        from dashscope import Generation
+        dashscope.api_key = new_key
+        loop = asyncio.get_running_loop()
+        rsp = await loop.run_in_executor(None, lambda: Generation.call(model='qwen-turbo', prompt='你好'))
+        
+        if rsp.status_code != 200:
+            msg = getattr(rsp, 'message', str(rsp))
+            code = getattr(rsp, 'code', '')
+            raise HTTPException(status_code=400, detail=f"API Key 验证失败: {code} - {msg}")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"调用 DashScope 验证异常: {str(e)}")
+
+    # 验证成功，持久化并更新
+    import backend.constants as const
+    const.DASHSCOPE_API_KEY = new_key
+    try:
+        with open("backend/constants.py", "r", encoding="utf-8") as f:
+            content = f.read()
+        import re
+        new_content = re.sub(
+            r'DASHSCOPE_API_KEY\s*=\s*os\.getenv\("DASHSCOPE_API_KEY",\s*"[^"]*"\)',
+            f'DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY", "{new_key}")',
+            content
+        )
+        with open("backend/constants.py", "w", encoding="utf-8") as f:
+            f.write(new_content)
+    except Exception as err:
+        print("Failed to persist key to constants.py:", err)
+        
+    return {"success": True, "message": "DashScope API Key 验证成功并已更新生效！"}
+
 # ==================== ADMIN DATASET & RAG TRAINING API ====================
 
 @app.get("/api/admin/datasets")
