@@ -490,7 +490,24 @@ function bindCardInteractions(parentEl) {
       openLightbox(btn.dataset.src, btn.dataset.caption);
     };
   });
-}
+// 图片加载错误重试机制（针对公共 GPU 队列 429 限流）
+window.handleImageLoadError = function(img) {
+  const retryCount = parseInt(img.dataset.retries || '0', 10);
+  if (retryCount < 5) {
+    img.dataset.retries = retryCount + 1;
+    img.style.opacity = '0.35';
+    img.parentElement.style.background = 'rgba(15, 23, 42, 0.8)';
+    const delay = 2000 + retryCount * 1800;
+    setTimeout(() => {
+      const cleanUrl = img.src.split('&_retry=')[0];
+      img.src = `${cleanUrl}&_retry=${Date.now()}`;
+      img.onload = () => {
+        img.style.opacity = '1';
+        img.parentElement.style.background = '';
+      };
+    }, delay);
+  }
+};
 
 // 渲染 Step 3: 多维度多视角图像生成结果
 function renderStep3Generation() {
@@ -518,29 +535,21 @@ function renderStep3Generation() {
 
   function applyAssetsToUI(assets, notice = '') {
     window.GENERATED_ASSETS = assets;
+    const renderItem = (item) => `
+      <div class="gen-image-item" style="position: relative; overflow: hidden;">
+        <img src="${item.src}" alt="${item.title}" loading="lazy" onerror="handleImageLoadError(this)" onload="this.style.opacity='1'" style="transition: opacity 0.3s ease;">
+        <div class="gen-image-caption">${item.title}</div>
+      </div>
+    `;
+
     if (moodRow && assets.moodboard) {
-      moodRow.innerHTML = assets.moodboard.map(item => `
-        <div class="gen-image-item">
-          <img src="${item.src}" alt="${item.title}" loading="lazy">
-          <div class="gen-image-caption">${item.title}</div>
-        </div>
-      `).join('');
+      moodRow.innerHTML = assets.moodboard.map(renderItem).join('');
     }
     if (palRow && assets.palette) {
-      palRow.innerHTML = assets.palette.map(item => `
-        <div class="gen-image-item">
-          <img src="${item.src}" alt="${item.title}" loading="lazy">
-          <div class="gen-image-caption">${item.title}</div>
-        </div>
-      `).join('');
+      palRow.innerHTML = assets.palette.map(renderItem).join('');
     }
     if (silRow && assets.silhouettes) {
-      silRow.innerHTML = assets.silhouettes.map(item => `
-        <div class="gen-image-item">
-          <img src="${item.src}" alt="${item.title}" loading="lazy">
-          <div class="gen-image-caption">${item.title}</div>
-        </div>
-      `).join('');
+      silRow.innerHTML = assets.silhouettes.map(renderItem).join('');
     }
     if (notice) {
       showNotification(`✨ ${notice}`);
