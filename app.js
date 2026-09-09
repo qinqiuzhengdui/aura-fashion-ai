@@ -214,12 +214,31 @@ function initLoginSystem() {
     loginSubmitBtn.addEventListener('click', doLogin);
   }
 
+  window.handleLogout = function() {
+    if (loginOverlay) {
+      loginOverlay.classList.remove('hidden');
+      loginOverlay.style.display = 'flex';
+      loginOverlay.style.visibility = 'visible';
+      loginOverlay.style.opacity = '1';
+      loginOverlay.style.pointerEvents = 'auto';
+    }
+    if (loginCard) {
+      loginCard.style.display = 'block';
+    }
+    if (loginMaximizeBtn) {
+      loginMaximizeBtn.style.display = 'none';
+    }
+    const bgVideo = loginOverlay ? loginOverlay.querySelector('video') : null;
+    if (bgVideo) {
+      bgVideo.play().catch(() => {});
+    }
+    showNotification('👋 已成功退出当前账号，已返回登录认证界面');
+  };
+
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      if (loginOverlay) {
-        loginOverlay.classList.remove('hidden');
-      }
-      showNotification('已成功退出当前账号');
+    logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.handleLogout();
     });
   }
 }

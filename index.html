@@ -135,7 +135,7 @@
           <span class="user-avatar-dot"></span>
           <span class="user-role-name" id="userRoleText">服装设计师</span>
         </div>
-        <button id="logoutBtn" class="btn btn-outline btn-sm" title="退出登录返回视频登录页面">退出登录</button>
+        <button id="logoutBtn" class="btn btn-outline btn-sm" onclick="if(window.handleLogout) window.handleLogout();" title="退出登录返回视频登录页面">退出登录</button>
         <button id="apiConfigBtn" class="btn btn-secondary btn-sm" title="配置 API Key 或模型端点">
           <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"></circle>
@@ -885,6 +885,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
