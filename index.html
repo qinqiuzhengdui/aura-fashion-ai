@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <!-- PptxGenJS for client-side PPTX generation -->
   <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <!-- Fullscreen High-Fashion Video Login Overlay -->
@@ -216,7 +216,7 @@
                 </button>
               </div>
               
-              <div class="history-link">
+              <div class="history-link" id="viewHistoryBtn">
                 <span>查看历史企划记录 →</span>
               </div>
             </div>
@@ -317,6 +317,16 @@
 
               <div class="feature-analysis-section" id="featureAnalysisContent"></div>
 
+              <!-- 新增的文案扩展与修订功能 -->
+              <div style="display: flex; gap: 10px; margin-top: 15px; background: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155;">
+                <button id="extendCopyBtn" class="btn btn-outline btn-sm">
+                  <span class="nav-icon">✨</span> 文案扩展 (AI 扩写)
+                </button>
+                <button id="reviseCopyBtn" class="btn btn-outline btn-sm">
+                  <span class="nav-icon">✏️</span> 文案修订 (修改优化)
+                </button>
+              </div>
+
               <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
                 <button id="goToStep5Btn" class="btn btn-primary">
                   进入下一步（生成 PPT 文档） →
@@ -369,6 +379,16 @@
                     </div>
                     <div class="format-label">网页 交互看板</div>
                   </div>
+                </div>
+
+                <!-- 文案扩展与修订功能 -->
+                <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 25px; margin-top: 10px;">
+                  <button id="extendCopyBtnStep5" class="btn btn-outline" style="border-color: #38bdf8; color: #38bdf8; padding: 10px 20px; font-weight: 500;">
+                    <span class="nav-icon">✨</span> AI 智能文案扩写
+                  </button>
+                  <button id="reviseCopyBtnStep5" class="btn btn-outline" style="border-color: #10b981; color: #10b981; padding: 10px 20px; font-weight: 500;">
+                    <span class="nav-icon">✏️</span> 文案修订与优化
+                  </button>
                 </div>
 
                 <button id="finalSubmitBtn" class="submit-req-btn ready">
@@ -477,6 +497,20 @@
     </div>
   </div>
 
-  <script src="app.js?v=2"></script>
+  <!-- History Modal -->
+  <div class="history-modal-overlay" id="historyModal" style="display: none;">
+    <div class="history-modal-content">
+      <div class="history-modal-header">
+        <h2>历史企划记录</h2>
+        <button class="close-modal-btn" id="closeHistoryBtn">&times;</button>
+      </div>
+      <div class="history-list" id="historyList">
+        <!-- History items will be populated here by app.js -->
+        <div style="text-align:center; padding: 20px; color:#888;">加载中...</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>

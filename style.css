@@ -514,7 +514,7 @@ body {
   width: 230px;
   background: #14171e;
   border-right: 1px solid var(--border-subtle);
-  padding: 24px 16px;
+  padding: 24px 16px 80px 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -523,6 +523,7 @@ body {
   height: calc(100vh - 64px);
   flex-shrink: 0;
   z-index: 20;
+  overflow-y: auto;
 }
 
 .sidebar-section-title {
@@ -1631,4 +1632,99 @@ body {
   .format-options-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* History Modal */
+.history-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.history-modal-content {
+  background: #191d24;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-card);
+}
+
+.history-modal-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.history-modal-header h2 {
+  font-size: 16px;
+  color: #fff;
+  margin: 0;
+}
+
+.close-modal-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.close-modal-btn:hover {
+  color: #fff;
+}
+
+.history-list {
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-item {
+  background: #11141a;
+  border: 1px solid #2a3240;
+  border-radius: var(--radius-md);
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.history-item:hover {
+  border-color: var(--accent-teal);
+}
+
+.history-item-date {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 6px;
+}
+
+.history-item-prompt {
+  font-size: 14px;
+  color: #e2e8f0;
+  margin-bottom: 8px;
+}
+
+.history-item-images {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.history-item-images img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
 }

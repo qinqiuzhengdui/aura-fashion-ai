@@ -1,6 +1,7 @@
 import os
 import json
 import asyncio
+import random
 from typing import List, Dict, Any
 from backend.constants import OPENAI_API_KEY
 from openai import AsyncOpenAI
@@ -11,58 +12,87 @@ client = AsyncOpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 async def generate_assets_from_prompt(prompt: str, selected_images: List[str]) -> Dict[str, Any]:
     """
-    Generate multidimensional images based on the prompt.
-    In a fully functional setup, this would use DALL-E 3.
+    Generate multidimensional images based on the prompt and reference images.
+    Uses Alibaba DashScope (ModelScope Wanx) for image-to-image generation.
     """
-    if not client:
-        # Fallback to simulated data if no API key is provided
-        await asyncio.sleep(2)
-        return {
-            "moodboard": [
-                {"src": "assets/generated/mood_1.png", "title": "情绪板：晨曦微光与丝质流动"},
-                {"src": "assets/generated/mood_2.png", "title": "光影与褶皱空间肌理"},
-                {"src": "assets/generated/mood_3.png", "title": "艺术解构与复古静谧细节"},
-                {"src": "assets/generated/mood_4.png", "title": "系列线稿与设计草图矩阵"}
-            ],
-            "palette": [
-                {"src": "assets/generated/color_1.png", "title": "流行色比例与潘通搭配色谱"},
-                {"src": "assets/generated/color_2.png", "title": "高级真丝面料悬垂光泽"},
-                {"src": "assets/generated/color_3.png", "title": "潘通标准色织样对比卡"}
-            ],
-            "silhouettes": [
-                {"src": "assets/inspiration/runway_2.png", "title": "造型 01: 垂坠立体刺绣礼服"},
-                {"src": "assets/inspiration/runway_4.png", "title": "造型 02: 极简削肩收腰长裙"},
-                {"src": "assets/inspiration/runway_13.png", "title": "造型 03: 细褶叠层透光晚装"}
-            ]
-        }
+    from backend.constants import DASHSCOPE_API_KEY
+    import dashscope
+    
+    if not DASHSCOPE_API_KEY:
+        raise Exception("DASHSCOPE_API_KEY is missing. 请在环境变量或 backend/constants.py 中配置您的 DashScope API Key。")
+        
+    dashscope.api_key = DASHSCOPE_API_KEY
+    
+    # Use the first selected image as reference, if available
+    ref_img = None
+    if selected_images and len(selected_images) > 0:
+        # Resolve to absolute path for file:// URI
+        abs_path = os.path.abspath(selected_images[0])
+        ref_img = f"file://{abs_path}"
 
-    # Simulate generating images in parallel
-    try:
-        # For cost and time, we'd normally make one or two requests.
-        # Here we mock the response to avoid excessive DALL-E usage during demo,
-        # but the infrastructure is ready.
-        # response = await client.images.generate(
-        #     model="dall-e-3", prompt=f"Fashion moodboard for {prompt}", n=1, size="1024x1024"
-        # )
-        
-        await asyncio.sleep(2)
-        
-        # Returning structural data mimicking real generation
-        return {
-            "moodboard": [
-                {"src": "assets/generated/mood_1.png", "title": f"情绪板：{prompt[:10]}..."},
-                {"src": "assets/generated/mood_2.png", "title": "结构肌理"}
-            ],
-            "palette": [
-                {"src": "assets/generated/color_1.png", "title": "流行色比例"},
-            ],
-            "silhouettes": [
-                {"src": "assets/inspiration/runway_2.png", "title": "核心造型预测"},
-            ]
+    async def call_wanx(sub_prompt):
+        loop = asyncio.get_running_loop()
+        kwargs = {
+            "model": "wanx-v1",
+            "prompt": f"{prompt}, {sub_prompt}, masterpiece, best quality, highly detailed",
+            "n": 1,
+            "size": "1024*1024"
         }
-    except Exception as e:
-        print(f"Image generation failed: {e}")
-        return {}
+        if ref_img:
+            kwargs["ref_img"] = ref_img
+        
+        # Run synchronous SDK call in an executor to avoid blocking the event loop
+        rsp = await loop.run_in_executor(None, lambda: dashscope.ImageSynthesis.call(**kwargs))
+        
+        if rsp.status_code == 200:
+            return rsp.output.results[0].url
+        else:
+            raise Exception(f"DashScope Error: {rsp.message}")
+
+    # Sub-prompts for exactly 9 images (3 per theme)
+    sub_prompts = [
+        # Moodboard (3 images)
+        "fashion moodboard aesthetic inspiration layout",
+        "fashion fabric macro folds shadows texture",
+        "vintage fashion details accessories close-up",
+        # Palette (3 images)
+        "fashion color palette swatches design",
+        "high quality silk fabric draped texture",
+        "pantone color cards fashion inspiration",
+        # Silhouettes (3 images)
+        "runway model elegant embroidered dress full body",
+        "runway model minimalist long dress full body",
+        "runway model layered translucent dress full body"
+    ]
+    
+    # Run API requests SEQUENTIALLY to avoid rate limiting and ensure stability
+    results = []
+    for sp in sub_prompts:
+        try:
+            url = await call_wanx(sp)
+            results.append(url)
+        except Exception as e:
+            print(f"Failed to generate for '{sp}': {e}")
+            # Fallback or propagate error. Let's propagate if it fails entirely.
+            raise e
+    
+    return {
+        "moodboard": [
+            {"src": results[0], "title": "情绪板：核心设计主题"},
+            {"src": results[1], "title": "光影与细节肌理"},
+            {"src": results[2], "title": "复古与配饰意象"}
+        ],
+        "palette": [
+            {"src": results[3], "title": "流行色比例与色谱"},
+            {"src": results[4], "title": "高级面料悬垂光泽"},
+            {"src": results[5], "title": "标准色彩编织样卡"}
+        ],
+        "silhouettes": [
+            {"src": results[6], "title": "造型 01: 核心主推款设计"},
+            {"src": results[7], "title": "造型 02: 极简流线型长裙"},
+            {"src": results[8], "title": "造型 03: 多层次轻盈晚装"}
+        ]
+    }
 
 
 async def analyze_features_from_images(prompt: str, selected_images: List[str]) -> Dict[str, Any]:

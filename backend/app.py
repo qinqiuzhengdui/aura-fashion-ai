@@ -7,8 +7,14 @@ import os
 
 from backend.sourcing import run_sourcing
 from backend.llm_services import generate_assets_from_prompt, analyze_features_from_images
+from backend.db import init_db, save_sourcing_record, save_generation_record, get_generation_history
 
 app = FastAPI(title="AURA Fashion AI API")
+
+# Initialize DB on startup
+@app.on_event("startup")
+async def startup_event():
+    init_db()
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,10 +31,20 @@ class GenerateRequest(BaseModel):
     prompt: str
     selectedImages: List[str]
 
+@app.get("/api/history/generation")
+async def fetch_generation_history():
+    try:
+        results = get_generation_history()
+        return {"success": True, "data": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/source_images")
 async def source_images(req: SourcingRequest):
     try:
         results = await run_sourcing(req.prompt)
+        # Save sourcing results to database
+        save_sourcing_record(req.prompt, results)
         return {"success": True, "data": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -37,6 +53,8 @@ async def source_images(req: SourcingRequest):
 async def generate_images(req: GenerateRequest):
     try:
         results = await generate_assets_from_prompt(req.prompt, req.selectedImages)
+        # Save generation results to database
+        save_generation_record(req.prompt, results)
         return {"success": True, "data": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

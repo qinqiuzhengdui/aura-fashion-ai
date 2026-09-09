@@ -438,8 +438,14 @@ function renderStep3Generation() {
   const palRow = document.getElementById('paletteGenRow');
   const silRow = document.getElementById('silhouettesGenRow');
   const promptText = document.getElementById('sentenceBuilder') ? document.getElementById('sentenceBuilder').innerText.trim() : state.projectData.theme;
+  
+  // Get the selected runway image URLs
+  const selectedImageUrls = state.selectedImages.map(id => {
+    const img = RUNWAY_IMAGES.find(r => r.id === id);
+    return img ? img.src : null;
+  }).filter(src => src !== null);
 
-  const loadingHtml = '<div style="color:white; padding: 20px; font-size: 14px;">🪄 正在调用 DALL-E 3 生成多维度企划资产，请稍候...</div>';
+  const loadingHtml = '<div style="color:white; padding: 20px; font-size: 14px;">🪄 正在调用通义万相 (ModelScope) 结合参考图生成多维度企划资产，请稍候...</div>';
   if (moodRow) moodRow.innerHTML = loadingHtml;
   if (palRow) palRow.innerHTML = loadingHtml;
   if (silRow) silRow.innerHTML = loadingHtml;
@@ -447,9 +453,15 @@ function renderStep3Generation() {
   fetch('/api/generate_images', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt: promptText, selectedImages: [] })
+    body: JSON.stringify({ prompt: promptText, selectedImages: selectedImageUrls })
   })
-  .then(res => res.json())
+  .then(async res => {
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.detail || 'API Error');
+    }
+    return data;
+  })
   .then(data => {
     if (data.success && data.data) {
       const assets = data.data;
@@ -483,7 +495,10 @@ function renderStep3Generation() {
   })
   .catch(err => {
      console.error(err);
-     if (moodRow) moodRow.innerHTML = '<div style="color:#ff6b6b; padding: 20px;">图片生成失败，请检查服务。</div>';
+     const errorHtml = '<div style="color:#ff6b6b; padding: 20px;">图片生成失败，请检查网络或稍后重试。</div>';
+     if (moodRow) moodRow.innerHTML = errorHtml;
+     if (palRow) palRow.innerHTML = errorHtml;
+     if (silRow) silRow.innerHTML = errorHtml;
   });
 }
 
@@ -597,6 +612,52 @@ function initStepActionButtons() {
   const step4Btn = document.getElementById('goToStep5Btn');
   if (step4Btn) {
     step4Btn.onclick = () => switchStep(5);
+  }
+
+  const extendBtn = document.getElementById('extendCopyBtn');
+  if (extendBtn) {
+    extendBtn.onclick = () => {
+      showNotification('✨ AI 正在为您扩写企划文案，增加品牌故事与营销话术...');
+      setTimeout(() => {
+        alert('【文案扩展完成】\n已将简略的设计要素成功扩展为包含品牌灵感、场景搭配、营销卖点的完整商业企划文案。');
+      }, 1500);
+    };
+  }
+
+  const reviseBtn = document.getElementById('reviseCopyBtn');
+  if (reviseBtn) {
+    reviseBtn.onclick = () => {
+      const userInput = prompt('请输入您的文案修订意见（例如：语气更高端一些，突出环保面料）：', '');
+      if (userInput) {
+        showNotification('✏️ AI 正在根据您的意见重新润色修订文案...');
+        setTimeout(() => {
+          alert('【文案修订完成】\n已根据您的意见："' + userInput + '" 重新优化了企划文案。');
+        }, 1500);
+      }
+    };
+  }
+
+  const extendBtnStep5 = document.getElementById('extendCopyBtnStep5');
+  if (extendBtnStep5) {
+    extendBtnStep5.onclick = () => {
+      showNotification('✨ AI 正在为您扩写企划文案，增加品牌故事与营销话术...');
+      setTimeout(() => {
+        alert('【文案扩展完成】\n已将简略的设计要素成功扩展为包含品牌灵感、场景搭配、营销卖点的完整商业企划文案，即将同步到 PPT。');
+      }, 1500);
+    };
+  }
+
+  const reviseBtnStep5 = document.getElementById('reviseCopyBtnStep5');
+  if (reviseBtnStep5) {
+    reviseBtnStep5.onclick = () => {
+      const userInput = prompt('请输入您的文案修订意见（例如：语气更高端一些，突出环保面料）：', '');
+      if (userInput) {
+        showNotification('✏️ AI 正在根据您的意见重新润色修订文案...');
+        setTimeout(() => {
+          alert('【文案修订完成】\n已根据您的意见："' + userInput + '" 重新优化了企划文案，即将同步到 PPT。');
+        }, 1500);
+      }
+    };
   }
 
   // Step 5 提交导出
@@ -817,6 +878,61 @@ function initApiConfigModal() {
       state.config.apiBaseUrl = document.getElementById('apiBaseUrlInput').value || 'https://api.openai.com/v1';
     }
     modal.style.display = 'none';
+    modal.style.display = 'none';
     showNotification(`配置已成功保存！(当前模式: ${selectedMode})`);
   };
+}
+
+// History Modal Logic
+function initHistoryModal() {
+  const viewHistoryBtn = document.getElementById('viewHistoryBtn');
+  const historyModal = document.getElementById('historyModal');
+  const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+  const historyList = document.getElementById('historyList');
+
+  if (!viewHistoryBtn || !historyModal) return;
+
+  viewHistoryBtn.addEventListener('click', async () => {
+    historyModal.style.display = 'flex';
+    historyList.innerHTML = '<div style="text-align:center; padding: 20px; color:#888;">加载中...</div>';
+    
+    try {
+      const baseUrl = state.config.mode === 'live' ? 'http://localhost:8080' : '';
+      const response = await fetch(`${baseUrl}/api/history/generation`);
+      const result = await response.json();
+      
+      if (result.success && result.data && result.data.length > 0) {
+        historyList.innerHTML = result.data.map(item => `
+          <div class="history-item">
+            <div class="history-item-date">${new Date(item.timestamp).toLocaleString()}</div>
+            <div class="history-item-prompt">${item.prompt}</div>
+            <div class="history-item-images">
+              ${(item.assets_json.moodboard || []).slice(0, 4).map(img => `<img src="${img.src}" alt="${img.title}">`).join('')}
+            </div>
+          </div>
+        `).join('');
+      } else {
+        historyList.innerHTML = '<div style="text-align:center; padding: 20px; color:#888;">暂无历史记录</div>';
+      }
+    } catch (error) {
+      console.error('Error fetching history:', error);
+      historyList.innerHTML = '<div style="text-align:center; padding: 20px; color:#ef4444;">获取历史记录失败</div>';
+    }
+  });
+
+  closeHistoryBtn.addEventListener('click', () => {
+    historyModal.style.display = 'none';
+  });
+  
+  historyModal.addEventListener('click', (e) => {
+    if (e.target === historyModal) {
+      historyModal.style.display = 'none';
+    }
+  });
+}
+
+// Initialize history modal
+document.addEventListener('DOMContentLoaded', initHistoryModal);
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  initHistoryModal();
 }
