@@ -163,41 +163,55 @@ function initLoginSystem() {
     });
   }
 
-  if (loginForm) {
-    loginForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const roleSelect = document.getElementById('loginRole');
-      const roleVal = roleSelect ? roleSelect.value : 'designer';
-      const selectedRoleText = roleSelect ? roleSelect.options[roleSelect.selectedIndex].text.split('/')[0].trim() : '服装设计师';
-      
-      if (userRoleText) userRoleText.innerText = selectedRoleText;
+  const doLogin = (e) => {
+    if (e) e.preventDefault();
+    const roleSelect = document.getElementById('loginRole');
+    const roleVal = roleSelect ? roleSelect.value : 'designer';
+    const selectedRoleText = roleSelect && roleSelect.selectedIndex >= 0 ? roleSelect.options[roleSelect.selectedIndex].text.split('/')[0].trim() : '服装设计师';
+    
+    if (userRoleText) userRoleText.innerText = selectedRoleText;
 
-      const submitBtn = document.getElementById('loginSubmitBtn');
+    const submitBtn = document.getElementById('loginSubmitBtn');
+    if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.innerText = '验证中，即将进入工作台...';
+    }
 
-      setTimeout(() => {
+    setTimeout(() => {
+      if (submitBtn) {
         submitBtn.disabled = false;
         submitBtn.innerHTML = `<span id="loginBtnText">进入 AURA 工作台</span><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>`;
-        
-        if (loginOverlay) {
-          loginOverlay.classList.add('hidden');
-        }
+      }
+      
+      if (loginOverlay) {
+        loginOverlay.classList.add('hidden');
+        loginOverlay.style.display = 'none';
+        loginOverlay.style.visibility = 'hidden';
+        loginOverlay.style.opacity = '0';
+        loginOverlay.style.pointerEvents = 'none';
+      }
 
-        if (roleVal === 'admin') {
-          state.isAdmin = true;
-          if (adminRAGNavBtn) adminRAGNavBtn.style.display = 'inline-flex';
-          if (navAdminRAG) navAdminRAG.style.display = 'flex';
-          openAdminPanel();
-          showNotification(`🛡️ 管理员已登录！已进入【时装多模态数据集与 RAG 训练中心】。`);
-        } else {
-          state.isAdmin = false;
-          if (adminRAGNavBtn) adminRAGNavBtn.style.display = 'none';
-          if (navAdminRAG) navAdminRAG.style.display = 'none';
-          showNotification(`✨ 欢迎登录 AURA 企划工作站！[${selectedRoleText}] 身份已就绪。`);
-        }
-      }, 500);
-    });
+      if (roleVal === 'admin') {
+        state.isAdmin = true;
+        if (adminRAGNavBtn) adminRAGNavBtn.style.display = 'inline-flex';
+        if (navAdminRAG) navAdminRAG.style.display = 'flex';
+        openAdminPanel();
+        showNotification(`🛡️ 管理员已登录！已进入【时装多模态数据集与 RAG 训练中心】。`);
+      } else {
+        state.isAdmin = false;
+        if (adminRAGNavBtn) adminRAGNavBtn.style.display = 'none';
+        if (navAdminRAG) navAdminRAG.style.display = 'none';
+        showNotification(`✨ 欢迎登录 AURA 企划工作站！[${selectedRoleText}] 身份已就绪。`);
+      }
+    }, 200);
+  };
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', doLogin);
+  }
+  const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+  if (loginSubmitBtn) {
+    loginSubmitBtn.addEventListener('click', doLogin);
   }
 
   if (logoutBtn) {
@@ -490,6 +504,8 @@ function bindCardInteractions(parentEl) {
       openLightbox(btn.dataset.src, btn.dataset.caption);
     };
   });
+}
+
 // 图片加载错误重试机制（针对公共 GPU 队列 429 限流）
 window.handleImageLoadError = function(img) {
   const retryCount = parseInt(img.dataset.retries || '0', 10);
